@@ -23,7 +23,9 @@ def clean(self,
           thresholds: dict = {},
           threshold_operators: dict = {},
           dust_crossing_events: dict = {'Ganymede': Time([(2458605, 2458654)], format='jd', scale='tdb'),
-                                        'Callisto': Time([(2458384, 2458385)], format='jd', scale='tdb')}
+                                        'Callisto': Time([(2458384, 2458385)], format='jd', scale='tdb')},
+          cosmic_boxsize: float = 0.02,
+          cosmic_nsigma: int = 4,
           ):
     """
 
@@ -98,7 +100,7 @@ def clean(self,
 
     ### Cosmic Ray Hits ###
     if cosmics_removal:
-        self.mask_cosmics()
+        self.mask_cosmics(boxsize=cosmic_boxsize, nsigma=cosmic_nsigma)
 
     self.get_clean_mask()
     self.get_clean_timelike()
