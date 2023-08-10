@@ -11,4 +11,5 @@ def mask_cosmics(self, boxsize, nsigma):
     """
     run_med = running_box(self.time, self.flux, boxsize, 'median')
     run_std = running_box(self.time, self.flux, boxsize, 'std')
+    # this mask will be the wrong size???
     self.masks['cosmics'] = (self.flux > run_med + (nsigma * run_std))

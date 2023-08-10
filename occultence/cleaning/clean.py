@@ -98,6 +98,12 @@ def clean(self,
         self.mask_dust(starts_of_dust_periods=starts,
                        ends_of_dust_periods=ends)
 
+    # clean before cosmic ray removal because it will reduce the running std dev. (making cosmics easier to spot)
+    # CAN'T DO THIS - IT MESSES UP THE SIZES OF THE ARRAYS...
+    # WILL CHECK IF COSMIC REMOVAL WORKS ON MASKED ARRAYS
+    # self.get_clean_mask()
+    # self.get_clean_timelike()
+
     ### Cosmic Ray Hits ###
     if cosmics_removal:
         self.mask_cosmics(boxsize=cosmic_boxsize, nsigma=cosmic_nsigma)
@@ -140,3 +146,24 @@ def apply_masks(self, **arrs):
         if "total" in self.masks:
             new_arrs.append(np.ma.masked_where(self.masks['total'],arr))
     return (*new_arrs,)
+
+@property
+def clean_time(self):
+    """
+    The 1D array of time (with astropy units of time).
+    """
+    return self.clean_timelike.get("time", None)
+
+@property
+def clean_flux(self):
+    """
+    The 2D array of fluxes (row = wavelength, col = time).
+    """
+    return self.clean_timelike.get("flux", None)
+
+@property
+def clean_uncertainty(self):
+    """
+    The 2D array of uncertainties on the fluxes.
+    """
+    return self.clean_timelike.get("uncertainty", None)
