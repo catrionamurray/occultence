@@ -5,11 +5,15 @@ class LightCurve:
                  name: str,
                  time: list,
                  flux: list,
+                 telescope: str,
+                 filter: str,
                  dates: list,
                  uncertainty: list,
                  timelike: dict = {}):
 
         self.metadata = {'name': name,
+                         'telescope': telescope,
+                         'filter': filter,
                          'dates': dates}
 
         if type(time[0]) != astropy.time.core.Time:

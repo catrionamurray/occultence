@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib
 import astropy
 from astropy.time import Time
+from .utils import *
 
 import warnings, textwrap
 
