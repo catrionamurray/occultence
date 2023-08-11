@@ -52,6 +52,7 @@ def import_diff_fits(fname: str,
         fwhm = imagelist['fwhm'].read()
         focus = imagelist['FOCUSPOS'].read()
         targ_teff = teffs[0]
+        # dates = hdr[] ### I CANT REMEMBER THE HEADER NAME
 
         try:
             izmags = cat['izmag'].read()
@@ -81,6 +82,8 @@ def import_diff_fits(fname: str,
             message = f""" Warning! The outputfits file path has not been provided."""
             cheerfully_suggest(message)
             peak, rawflux = np.zeros(len(t)), np.zeros(len(t))
+    else:
+        peak, rawflux = np.zeros(len(t)), np.zeros(len(t))
 
     assert len(peak) == len(t)  # make sure the peak flux length matches the length of the extracted time
 
