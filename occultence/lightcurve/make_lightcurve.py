@@ -104,4 +104,90 @@ class LightCurve:
                 warnings.simplefilter("ignore")
                 return np.nanmedian(np.diff(self.time))
 
+    def _validate_core_dictionaries(self):
+        """
+        Do some simple checks to make sure this LightCurve
+        is populated with the minimal data needed to do anything.
+        It shouldn't be run before the LightCurve is fully
+        initialized; otherwise, it might complain about
+        a half-populated object.
+        """
+
+        # make sure there are some times defined
+        if self.ntime is None:
+            cheerfully_suggest(
+                f"""
+            No times are defined for this LightCurve.
+            """
+            )
+
+        # does the flux have the right shape?
+        if (self.shape != np.shape(self.flux)) or (np.shape(self.time)!=np.shape(self.flux) ) :
+            message = f"""
+            Something doesn't line up!
+            The flux array has a shape of {np.shape(self.flux)}.
+            The time array has {self.ntime} times.
+            """
+            if self.shape == np.shape(self.flux)[::-1]:
+                cheerfully_suggest(
+                    f"""{message}
+                    Any chance your flux array is transposed?
+                    """
+                )
+            else:
+                cheerfully_suggest(message)
+
+        for n in ["uncertainty"]:
+            x = getattr(self, n)
+            if x is not None:
+                if x.shape != np.shape(self.flux):
+                    message = f"""
+                    Watch out! The '{n}' array has
+                    a shape of {x.shape}, which doesn't match the
+                    flux array's shape of {np.shape(self.flux)}.
+                    """
+                    cheerfully_suggest(message)
+
+        self._sort()
+
+    def _initialize_from_dictionaries(
+        self, timelike={}, metadata={}
+    ):
+        """
+        Populate from dictionaries in the correct format.
+
+        Parameters
+        ----------
+        timelike : dict
+            A dictionary containing 1D arrays with the same
+            shape as the time axis. It must at least
+            contain the keys 'time', 'flux' and 'uncertainty.
+        metadata : dict
+            A dictionary containing all other metadata
+            associated with the dataset, generally lots of
+            individual parameters or comments.
+        """
+
+        # update the three core dictionaries of arrays
+        for k in timelike:
+            self.timelike[k] = timelike[k] * 1
+        # multiplying by 1 is a kludge to prevent accidental links
+
+        # update the metadata
+        self.metadata.update(**metadata)
+
+        # validate that something reasonable got populated
+        self._validate_core_dictionaries()
+
+
+    def _create_copy(self):
+        """
+        Create a copy of self, with the core dictionaries copied.
+        """
+        new = type(self)()
+        new._initialize_from_dictionaries(
+            **copy.deepcopy(self._get_core_dictionaries())
+        )
+        return new
+
 

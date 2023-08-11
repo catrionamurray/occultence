@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import astropy
 from astropy.time import Time
 from .utils import *
@@ -13,6 +14,10 @@ from astropy.io import fits, ascii
 # import datetime as dt
 from astropy.stats import sigma_clip
 import operator
+import george
+from scipy.stats import binned_statistic
+from scipy.interpolate import interp1d
+from scipy.optimize import minimize
 
 import warnings, textwrap
 

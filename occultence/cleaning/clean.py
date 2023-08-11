@@ -3,6 +3,7 @@ from timelike_masks import mask_timelike_threshold
 from bad_weather import mask_bad_weather
 from cosmics import mask_cosmics
 from dust import mask_dust
+from ..lightcurve import *
 
 operator_dict = { ">": operator.gt,
                   "<": operator.lt,
@@ -44,6 +45,8 @@ def clean(self,
     :param dust_crossing_events: A dictionary
     :return:
     """
+
+    self_copy = self.copy
 
     self.masks = {}
     self.metadata['thresholds'] = {}
@@ -121,6 +124,16 @@ def clean(self,
     self.get_clean_mask()
     self.get_clean_timelike()
 
+    # this might make a weird reference loop?
+    cleaned_lightcurve = self._create_copy()
+    cleaned_lightcurve.timelike = {}
+    for k in self.timelike:
+        cleaned = self.timelike[k][self.masks['total'] == 0] * 1
+        cleaned_lightcurve.timelike[k] = cleaned
+    # self.cleaned = cleaned_lightcurve
+
+    return cleaned_lightcurve
+
 def get_clean_mask(self):
     """
     Generate a 'total' mask by combining all masks.
@@ -142,7 +155,7 @@ def get_clean_timelike(self):
 
     self.clean_timelike = {}
     for t in self.timelike:
-        self.clean_timelike[t] = self.timelike[t][self.masks['total'] == 0]
+        self.clean_timelike[t] = self.timelike[t][self.masks['total'] == 0] * 1
 
 def apply_masks(self, **arrs):
     """
