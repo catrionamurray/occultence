@@ -1,7 +1,7 @@
 from ..imports import *
 from .gp import *
 
-def gp_detrend_lightcurve(self, first_sigma_clip=True, second_sigma_clip=True, nsigma=3, running_mean_boxsize=0.04,
+def gp_detrend(self, first_sigma_clip=True, second_sigma_clip=True, nsigma=3, running_mean_boxsize=0.04,
                         rotation_period=None, rotation_amp=None, binkw={}, plot=True,figsize=(6, 4)):
 
     detrended_lightcurve = self._create_copy()

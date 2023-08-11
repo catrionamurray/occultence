@@ -19,6 +19,7 @@ import george
 from scipy.stats import binned_statistic
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
+from astropy.timeseries import BoxLeastSquares
 
 import warnings, textwrap
 

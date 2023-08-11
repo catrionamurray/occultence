@@ -1,1 +1,1 @@
-from write_to_npy import *
+from .write_to_npy import *

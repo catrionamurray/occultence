@@ -1,1 +1,1 @@
-from make_lightcurve import *
+from .make_lightcurve import *
