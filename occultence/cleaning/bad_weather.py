@@ -1,6 +1,5 @@
 from ..imports import *
-
-from scipy.ndimage import uniform_filter1d
+from ..utils import running_box
 
 def mask_bad_weather(self, boxsize, thresh):
     """

@@ -1,8 +1,18 @@
 import numpy as np
-import matplotlib
 import astropy
 from astropy.time import Time
 from .utils import *
+import fitsio
+import math
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+import glob
+import fitsio
+from astropy.io import fits, ascii
+# import datetime as dt
+from astropy.stats import sigma_clip
+import operator
 
 import warnings, textwrap
 
@@ -15,5 +25,3 @@ def cheerfully_suggest(*args, **kwargs):
     warnings.formatwarning = custom_formatwarning
     warnings.warn(*args, **kwargs)
     warnings.formatwarning = original_warning_format
-
-import operator

@@ -57,3 +57,10 @@ def calculate_running_mean(x,y,boxsize):
     dy = running_box(x,y,boxsize,'mean')
     return dy
 
+def sort_on_time(time,*sortarrs):
+    sorted_arrs = []
+    for arr in sortarrs:
+        sorted_arrs.append(np.array([j for i, j in sorted(zip(time, arr))]))
+    sorted_time = np.array(sorted(time))
+    return sorted_time, (*sorted_arrs,)
+

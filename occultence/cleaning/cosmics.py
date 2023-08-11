@@ -1,5 +1,5 @@
 from ..imports import *
-
+from ..utils import running_box
 
 def mask_cosmics(self, boxsize, nsigma):
     """
