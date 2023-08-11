@@ -9,6 +9,8 @@ class LightCurve:
                  timelike: dict = {},
                  metadata: dict = {}):
 
+        self._core_dictionaries = ["timelike", "metadata"]
+
         self.metadata = {'name': name}
         for m in metadata:
             self.metadata[m] = metadata[m]
@@ -190,4 +192,14 @@ class LightCurve:
         )
         return new
 
+    def _get_core_dictionaries(self):
+        """
+        Get the core dictionaries of this LightCurve.
 
+        Returns
+        -------
+        core : dict
+            Dictionary containing the keys
+            ['timelike', 'metadata']
+        """
+        return {k: vars(self)[k] for k in self._core_dictionaries}

@@ -13,6 +13,7 @@ import fitsio
 from astropy.io import fits, ascii
 # import datetime as dt
 from astropy.stats import sigma_clip
+import pickle
 import operator
 import george
 from scipy.stats import binned_statistic
