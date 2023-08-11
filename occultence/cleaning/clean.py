@@ -50,20 +50,27 @@ def clean(self,
 
     # mask where flux is nan or zero
     if nan_flux_removal:
+        print("Masking NaN fluxes...")
         self.masks['flux_is_nan'] = np.zeros(self.ntime)
         self.masks['flux_is_nan'][np.isnan(self.flux)] = 1
     if zero_flux_removal:
+        print("Masking zero fluxes...")
         self.masks['flux_is_zero'] = np.zeros(self.ntime)
         self.masks['flux_is_zero'][self.flux==0] = 1
 
     ### Bad Weather ###
     if bad_weather_removal:
-        if "artificial_lightcurve" in self.timelike:
-            self.mask_bad_weather(bad_weather_boxsize, bad_weather_threshvalue)
+        if "bad_weather" in self.timelike:
+            print("Masking bad weather using 'bad_weather' in timelike dictionary...")
+            self.masks['bad_weather'] = self.timelike['bad_weather']
         else:
-            # If there is no artifical lightcurve stored we cannot check for bad weather!
-            warnings.warn(f""" The LightCurve's timelike dictionary does not appear to have the 'artifical_lightcurve' in it.
-             This array is necessary to calculate bad weather, therefore this will ** not ** be applied!""")
+            print("Masking bad weather...")
+            if "artificial_lightcurve" in self.timelike:
+                self.mask_bad_weather(bad_weather_boxsize, bad_weather_threshvalue)
+            else:
+                # If there is no artifical lightcurve stored we cannot check for bad weather!
+                warnings.warn(f""" The LightCurve's timelike dictionary does not appear to have the 'artifical_lightcurve' in it.
+                 This array is necessary to calculate bad weather, therefore this will ** not ** be applied!""")
 
     ### Thresholds ###
     # Apply a threshold to each key passed in thresholds dictionary. Threshold_operators tells the function which
@@ -71,6 +78,7 @@ def clean(self,
     if threshold_removal:
         for thresh in thresholds:
             if thresh in self.timelike:
+                print(f"Masking {thresh}{threshold_operators[thresh]}{thresholds[thresh]}...")
                 if threshold_operators[thresh] in operator_dict.keys():
                     self.mask_timelike_threshold(timelike_key=thresh,
                                                  threshold=thresholds[thresh],
@@ -86,13 +94,14 @@ def clean(self,
             else:
                 # If the thresholds dict contains a key which isn't in the LightCurve.timelike dictionary.
                 message = f"""
-                            The thresholds dictionary contains the key {thresh} that doesn't exist in the timelike dictionary.
-                            The options for thresholds to set are: {", ".join(self.timelike.keys())} 
+                            The thresholds dictionary contains the key {thresh} that doesn't exist in the timelike 
+                            dictionary. The options for thresholds to set are: {", ".join(self.timelike.keys())} 
                                 """
                 cheerfully_suggest(message)
 
     ### Dust Crossing Issues ###
     if dust_removal:
+        print(f"Masking dust-crossing events...")
         starts = [d[0] for d in dust_crossing_events[self.telescope]]
         ends = [d[1] for d in dust_crossing_events[self.telescope]]
         self.mask_dust(starts_of_dust_periods=starts,
@@ -106,6 +115,7 @@ def clean(self,
 
     ### Cosmic Ray Hits ###
     if cosmics_removal:
+        print("Masking cosmic ray hits...")
         self.mask_cosmics(boxsize=cosmic_boxsize, nsigma=cosmic_nsigma)
 
     self.get_clean_mask()
