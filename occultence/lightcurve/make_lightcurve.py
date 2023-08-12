@@ -24,7 +24,7 @@ class LightCurve:
             cheerfully_suggest(message)
             time = Time(time, format='jd', scale='tdb')
 
-        self.timelike = {'time': time * 1,
+        self.timelike = {'time': time,
                          'flux': flux * 1,
                          'uncertainty': uncertainty * 1}
 

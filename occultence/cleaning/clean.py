@@ -1,8 +1,8 @@
 from ..imports import *
-from timelike_masks import mask_timelike_threshold
-from bad_weather import mask_bad_weather
-from cosmics import mask_cosmics
-from dust import mask_dust
+from .timelike_masks import mask_timelike_threshold
+from .bad_weather import mask_bad_weather
+from .cosmics import mask_cosmics
+from .dust import mask_dust
 from ..lightcurve import *
 
 operator_dict = { ">": operator.gt,
