@@ -46,8 +46,6 @@ def clean(self,
     :return:
     """
 
-    self_copy = self.copy
-
     self.masks = {}
     self.metadata['thresholds'] = {}
 
@@ -128,7 +126,10 @@ def clean(self,
     cleaned_lightcurve = self._create_copy()
     cleaned_lightcurve.timelike = {}
     for k in self.timelike:
-        cleaned = self.timelike[k][self.masks['total'] == 0] * 1
+        if type(self.timelike[k]) == astropy.time.core.Time:
+            cleaned = self.timelike[k][self.masks['total'] == 0]
+        else:
+            cleaned = self.timelike[k][self.masks['total'] == 0] * 1
         cleaned_lightcurve.timelike[k] = cleaned
     # self.cleaned = cleaned_lightcurve
 
@@ -143,6 +144,7 @@ def get_clean_mask(self):
     self.masks['total'] = np.zeros(self.ntime)
     for mask in self.masks:
         self.masks['total'] = (self.masks['total']!=0) | (self.masks[mask]!=0)
+    self.masks['total'] = np.array(self.masks['total'], dtype=int)
 
 def get_clean_timelike(self):
     """
@@ -155,7 +157,10 @@ def get_clean_timelike(self):
 
     self.clean_timelike = {}
     for t in self.timelike:
-        self.clean_timelike[t] = self.timelike[t][self.masks['total'] == 0] * 1
+        if type(self.timelike[t]) == astropy.time.core.Time:
+            self.clean_timelike[t] = self.timelike[t][self.masks['total'] == 0]
+        else:
+            self.clean_timelike[t] = self.timelike[t][self.masks['total'] == 0] * 1
 
 def apply_masks(self, **arrs):
     """

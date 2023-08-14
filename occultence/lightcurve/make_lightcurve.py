@@ -2,45 +2,62 @@ from ..imports import *
 
 class LightCurve:
     def __init__(self,
-                 name: str,
-                 time: list,
-                 flux: list,
-                 uncertainty: list,
-                 timelike: dict = {},
-                 metadata: dict = {}):
+                 name: str = None,
+                 time: list = None,
+                 flux: list = None,
+                 uncertainty: list = None,
+                 timelike: dict = None,
+                 metadata: dict = None,
+                 **kw):
 
         self._core_dictionaries = ["timelike", "metadata"]
 
         self.metadata = {'name': name}
-        for m in metadata:
-            self.metadata[m] = metadata[m]
+        self.timelike = {}
+        # for m in metadata:
+        #     self.metadata[m] = metadata[m]
 
-        if type(time[0]) != astropy.time.core.Time:
-            message = f"""
-                        Warning! The time array is not an astropy.Time object, therefore there is no info about the 
-                        format or scale.
-                        We will assume that it is JD and TDB from here on!
-                        """
-            cheerfully_suggest(message)
-            time = Time(time, format='jd', scale='tdb')
+        if (type(timelike) == dict):
+            self._initialize_from_dictionaries(
+                timelike=timelike,
+                metadata=metadata)
+        # then try to initialize from arrays
+        elif (time is not None) and (flux is not None) and (uncertainty is not None):
+            self._initialize_from_arrays(
+                time=time,
+                flux=flux,
+                uncertainty=uncertainty,
+                **kw,
+            )
 
-        self.timelike = {'time': time,
-                         'flux': flux * 1,
-                         'uncertainty': uncertainty * 1}
+        if metadata is not None:
+            self.metadata.update(**metadata)
 
-        for k in timelike:
-            if np.shape(timelike[k]) == np.shape(self.time):
-                self.timelike[k] = timelike[k] * 1
-            else:
+        if self.time is not None:
+            if type(self.time[0]) != astropy.time.core.Time:
                 message = f"""
-                Something doesn't line up!
-                The timelike array {k} has a shape of {timelike[k]}.
-                The time array has {self.ntime} times.
-                """
+                            Warning! The time array is not an astropy.Time object, therefore there is no info about the 
+                            format or scale.
+                            We will assume that it is JD and TDB from here on!
+                            """
                 cheerfully_suggest(message)
+                self.timelike['time'] = Time(self.timelike['time'] * 1,
+                                             format='jd',
+                                             scale='tdb')
+
+        # for k in timelike:
+        #     if np.shape(timelike[k]) == np.shape(self.time):
+        #         self.timelike[k] = timelike[k] * 1
+        #     else:
+        #         message = f"""
+        #         Something doesn't line up!
+        #         The timelike array {k} has a shape of {timelike[k]}.
+        #         The time array has {self.ntime} times.
+        #         """
+        #         cheerfully_suggest(message)
 
     def __repr__(self):
-        return f"<Lightcurve {self.metadata['name']}({self.ntime}t)>"
+        return f"<🌟 Lightcurve {self.metadata['name']} ({self.ntime}t) 🌟>"
     def _sort(self):
         i_time = np.argsort(self.time)
         if "original_time_index" not in self.timelike:
@@ -55,6 +72,13 @@ class LightCurve:
         The name of this `Rainbow` object.
         """
         return self.metadata.get("name", None)
+
+    @property
+    def shape(self):
+        """
+        The shape of the flux array (ntimes).
+        """
+        return (self.ntime,)
 
     @property
     def dates(self):
@@ -152,6 +176,40 @@ class LightCurve:
 
         self._sort()
 
+
+    def _initialize_from_arrays(
+        self, time=None, flux=None, uncertainty=None, **kw
+    ):
+        """
+        Populate from arrays.
+
+        Parameters
+        ----------
+        time : Quantity, Time, optional
+            A 1D array of times, in any unit.
+        flux : array, optional
+            A 2D array of flux values.
+        uncertainty : array, optional
+            A 2D array of uncertainties, associated with the flux.
+        **kw : dict, optional
+            Additional keywords will be interpreted as arrays
+            that should be sorted into the appropriate location
+            based on their size.
+        """
+        # store the time, flux + uncertainty
+        self.timelike = {'time': time,
+                         'flux': flux * 1,
+                         'uncertainty': uncertainty * 1}
+
+        for k, v in kw.items():
+            if type(v) == astropy.time.core.Time:
+                self.timelike[k] = v
+            else:
+                self.timelike[k] = v * 1
+
+        # validate that something reasonable got populated
+        self._validate_core_dictionaries()
+
     def _initialize_from_dictionaries(
         self, timelike={}, metadata={}
     ):
@@ -172,7 +230,10 @@ class LightCurve:
 
         # update the three core dictionaries of arrays
         for k in timelike:
-            self.timelike[k] = timelike[k] * 1
+            if type(timelike[k]) == astropy.time.core.Time:
+                self.timelike[k] = timelike[k]
+            else:
+                self.timelike[k] = timelike[k] * 1
         # multiplying by 1 is a kludge to prevent accidental links
 
         # update the metadata
@@ -203,3 +264,73 @@ class LightCurve:
             ['timelike', 'metadata']
         """
         return {k: vars(self)[k] for k in self._core_dictionaries}
+
+    def __getattr__(self, key):
+        """
+        If an attribute/method isn't explicitly defined,
+        try to pull it from one of the core dictionaries.
+
+        Let's say you want to get the 2D uncertainty array
+        but don't want to type `self.fluxlike['uncertainty']`.
+        You could instead type `self.uncertainty`, and this
+        would try to search through the four standard
+        dictionaries to pull out the first `uncertainty`
+        it finds.
+
+        Parameters
+        ----------
+        key : str
+            The attribute we're trying to get.
+        """
+        if key not in self._core_dictionaries:
+            for dictionary_name in self._core_dictionaries:
+                try:
+                    return self.__dict__[dictionary_name][key]
+                except KeyError:
+                    pass
+        message = f".{key} does not exist for this LightCurve"
+        raise AttributeError(message)
+
+    def plot(self, ax=None, figsize=(12,4), ylims=[0.98,1.02], **kw):
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize)
+
+        ax.errorbar(self.time.value, self.flux, self.uncertainty, fmt='.', **kw)
+        ax.set_ylim(ylims[0], ylims[1])
+        ax.set_ylabel("Flux")
+        ax.set_xlabel("Time [d]")
+        ax.legend()
+        return ax
+
+
+
+    from ..cleaning import (
+        clean,
+        mask_timelike_threshold,
+        mask_bad_weather,
+        mask_cosmics,
+        mask_dust,
+        get_clean_mask,
+        get_clean_timelike,
+        apply_masks,
+        # clean_time,
+        # clean_flux,
+        # clean_uncertainty
+    )
+    from ..binning import (
+        bin,
+    )
+    from ..lightcurve_detrending import (
+        gp_detrend,
+    )
+    from ..transit_detecting import (
+        find_transits,
+        bls,
+    )
+
+    # from ..flare_finding import *
+    # from ..read import *
+    # from ..write import *
+    # from statistics import *
+
+

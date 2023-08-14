@@ -2,16 +2,16 @@ import numpy as np
 import copy
 import astropy
 from astropy.time import Time
+from astropy.timeseries import TimeSeries, aggregate_downsample
+import astropy.units as u
 from .utils import *
-import fitsio
+# import fitsio
 import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import glob
-import fitsio
 from astropy.io import fits, ascii
-# import datetime as dt
 from astropy.stats import sigma_clip
 import pickle
 import operator

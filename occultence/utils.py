@@ -41,6 +41,15 @@ def running_box(x,y,boxsize,operation):
     dy = np.ma.masked_where(dy == 0, dy)
     dy = np.ma.masked_invalid(dy)
     return dy
+
+def clipped_std(x, sigma=3):
+    from astropy.stats import sigma_clip
+    return np.ma.std(sigma_clip(x,sigma=sigma))
+
+def clipped_mean(x, sigma=3):
+    from astropy.stats import sigma_clip
+    return np.ma.mean(sigma_clip(x,sigma=sigma))
+
 def calculate_running_rms(x,y,boxsize):
     dy = running_box(x,y,boxsize,'std')
     return dy

@@ -9,7 +9,11 @@ def mask_cosmics(self, boxsize, nsigma):
     :param nsigma:
     :return:
     """
-    run_med = running_box(self.time, self.flux, boxsize, 'median')
-    run_std = running_box(self.time, self.flux, boxsize, 'std')
-    # this mask will be the wrong size???
-    self.masks['cosmics'] = (self.flux > run_med + (nsigma * run_std))
+    if type(self.time[0]) == astropy.time.core.Time:
+        time = self.time.value
+    else:
+        time = self.time
+    run_med = running_box(time, self.flux, boxsize, 'median')
+    run_std = running_box(time, self.flux, boxsize, 'clipped_std')
+
+    self.masks['cosmics'] = np.array((self.flux > run_med + (nsigma * run_std)), dtype=int)
