@@ -4,8 +4,13 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                   obj='likelihood', oversample=100.0, minpower=5, plot=True):
     bls_lightcurve = self._create_copy()
     transit_pd = {"period": [], "depth": [], 'duration': [], 'snr': []}
-    bls_f_model, transit_params, stats, BLS_obj = self.bls(transit_durations, minimum_period, maximum_period,
-                                                           limitperiod, obj, oversample, minpower)
+    bls_f_model, transit_params, stats, BLS_obj = self.bls(transit_durations=transit_durations,
+                                                           minimum_period= minimum_period,
+                                                           maximum_period=maximum_period,
+                                                           limitperiod=limitperiod,
+                                                           obj=obj,
+                                                           oversample=oversample,
+                                                           minpower=minpower)
 
     if len(stats)>0:
         bls_transits = stats['per_transit_count']
@@ -16,14 +21,14 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
         if len(bls_transits) > 0:
             for b in range(len(bls_transits)):
                 if bls_transits[b] > 0:
-                    mid_transit = stats['transit_times'][b]
+                    mid_transit = stats['transit_times'][b].value
                     transit_start = mid_transit - (0.5 * transit_params[2].to_value('d'))
                     transit_end = mid_transit + (0.5 * transit_params[2].to_value('d'))
 
                     recovered_per = np.log10(transit_params[0].to_value('d'))
                     recovered_dur = transit_end - transit_start
                     recovered_depth = stats['depth'][0]
-                    snr = (recovered_depth * np.sqrt(bls_transits[b])) / np.nanmedian(wn2)
+                    snr = (recovered_depth * np.sqrt(bls_transits[b])) / np.nanmedian(self.uncertainty)
 
                     transit_pd["period"].append(recovered_per)
                     transit_pd["depth"].append(recovered_depth)
@@ -32,12 +37,11 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
 
                     if plot:
                         plt.figure(figsize=(36, 4))
-                        plt.plot(lc_t, norm_f, 'c.')
-                        plt.plot(bin_t, bin_f, 'k.')
-                        plt.plot(bin_t, bls_f, 'orange')
+                        plt.plot(self.time.value, self.flux, 'k.')
+                        plt.plot(self.time.value, bls_f_model, 'orange')
                         plt.axvline(transit_start)
                         plt.axvline(transit_end)
-                        plt.plot(bin_t[transits], (bin_f)[transits], 'b.')
+                        plt.plot(self.time.value[transits], self.flux[transits], 'b.')
                         plt.title("SNR = %0.2f, Period = %0.2f" % (snr, recovered_per))
                         plt.xlim(transit_start - 0.2, transit_start + 0.2)
                         plt.show()

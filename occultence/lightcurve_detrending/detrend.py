@@ -33,10 +33,10 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
                                                                   rotation_amp=rotation_amp,
                                                                   plot=plot,figsize=figsize)
 
-    detrended_lightcurve.timelike['gp_model'] = gp_mu_og
+    detrended_lightcurve.timelike['gp_model'] = (gp_mu_og+1)
     detrended_lightcurve.timelike['gp_model_err'] = np.sqrt(gp_var_og)
     detrended_lightcurve.timelike['original_flux'] = detrended_lightcurve.timelike['flux'] * 1
-    detrended_lightcurve.timelike['flux'] = (detrended_lightcurve.timelike['flux'] / gp_mu_og) * 1
+    detrended_lightcurve.timelike['flux'] = (detrended_lightcurve.timelike['flux'] / (gp_mu_og+1)) * 1
 
     # store some metadata about the kernel too:
     detrended_lightcurve.metadata['kernel'] = {}
