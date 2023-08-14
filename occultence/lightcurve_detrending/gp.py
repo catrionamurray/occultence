@@ -40,7 +40,7 @@ def gp(x,
        rotation_period=None,
        rotation_amp=None,
        plot=False,
-       figsize=(6,4),
+       figsize=(12,4),
        ):
 
     x_pred = np.linspace(np.min(x), np.max(x), 1000)

@@ -3,7 +3,7 @@ from .gp import *
 from .sigma_clipping import first_sigma_clip, second_sigma_clip
 
 def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma=3, running_mean_boxsize=0.04,
-                        rotation_period=None, rotation_amp=None, binkw={}, plot=True, figsize=(6, 4)):
+                        rotation_period=None, rotation_amp=None, binkw={}, plot=True, figsize=(12, 4)):
 
     detrended_lightcurve = self._create_copy()
 
@@ -16,11 +16,28 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
     if type(x) == astropy.time.core.Time:
         x = x.value
 
+    if plot:
+        plt.figure(figsize=figsize)
+
     if do_first_sigma_clip:
+        if plot:
+            plt.plot(x, y, '.', alpha=0.5, label='Before First Sigma-Clip')
+
         y = first_sigma_clip(y=y,nsigma_lower=nsigma_lower, nsigma_upper=nsigma_upper)
+
+        if plot:
+            plt.plot(x,y, '.', alpha=0.5, label="After First Sigma-Clip")
     if do_second_sigma_clip:
+        if plot:
+            plt.plot(x, y, '.', alpha=0.5, label="Before Second Sigma-Clip")
+
         y = second_sigma_clip(x=x, y=y, nsigma_lower=nsigma_lower, nsigma_upper=nsigma_upper,
                                running_mean_boxsize=running_mean_boxsize)
+        if plot:
+            plt.plot(x, y, '.', alpha=0.5, label="After Second Sigma-Clip")
+
+    if plot:
+        plt.legend()
 
     # remove NaNs - the GP will not work with NaNs!
     cond_nans = ~np.isnan(y)
