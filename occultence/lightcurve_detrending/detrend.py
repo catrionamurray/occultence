@@ -28,7 +28,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
     # yerr = yerr[cond_nans]
     # y = y[cond_nans]
 
-    gp_mu, gp_var, gp_jitter, gp_mu_og, gp_var_og, gp_kernel = gp(x[cond_nans], y[cond_nans], yerr[cond_nans], x,
+    gp_mu, gp_var, gp_jitter, gp_mu_og, gp_var_og, gp_kernel = gp(x[cond_nans], y[cond_nans]-1, yerr[cond_nans], x,
                                                                   rotation_period=rotation_period,
                                                                   rotation_amp=rotation_amp,
                                                                   plot=plot,figsize=figsize)

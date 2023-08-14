@@ -43,7 +43,6 @@ def gp(x,
        figsize=(6,4),
        ):
 
-    mu, y_pred = [], []
     x_pred = np.linspace(np.min(x), np.max(x), 1000)
 
     # try:
