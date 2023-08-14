@@ -136,4 +136,4 @@ def gp(x,
     #     return [],0, 0, {}
     og_mu, og_var = gaussproc.predict(y, x_original, return_var=True)
 
-    return mu, var, jitter, og_mu, og_var, kernel_dict
+    return mu, var, jitter, og_mu, og_var, kernel_dict, gaussproc
