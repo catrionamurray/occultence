@@ -44,7 +44,7 @@ def pytransit_model(time,
     flux = tm.evaluate(k=k, ldc=ldc, t0=time[0] + t0.to_value('d'), p=p.to_value('d'), a=a_Rs, i=i.to_value('radian'))
     return flux
 
-def inject_transit(self, per, epoch, inc, rp, M, R, ld):
+def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None):
     """
 
     :param self:
@@ -57,6 +57,15 @@ def inject_transit(self, per, epoch, inc, rp, M, R, ld):
     :param ld:
     :return:
     """
+    if R is None or M is None:
+        if "R_star" in self.metadata and "M_star" in self.metadata:
+            R = self.metadata['R_star']
+            M = self.metadata['M_star']
+        else:
+            warnings.warn("To generate a planet distribution for this star, we need its radius and mass. Please store"
+                          "the radius and mass in the .metadata dict or pass them explicitly to this function!")
+            return
+
     model = pytransit_model(time=self.time.value, Rp=rp, ldc=ld, t0=epoch, p=per,R=R, M=M, i=inc)
     a_Rs = semi_major_axis(per, M, R).decompose()
     b = a_Rs * math.cos(inc.to_value('radian'))
@@ -125,6 +134,23 @@ def pool_inject_transit(self, list_of_logpers, list_of_phase, list_of_cosi, list
 #     i_t_s = i_t_s + 10 ** logp
 #     i_t_e = i_t_e + 10 ** logp
 
+def mod_random(x, d=False, seed=667):
+    """
+    Helper function that generates deterministic
+    random numbers if needed for testing.
+    Parameters
+    -----------
+    d : False or bool
+        Flag to set if random numbers shall be deterministic.
+    seed : 5 or int
+        Sets the seed value for random number generator.
+    """
+    if d == True:
+        np.random.seed(seed)
+        return np.random.rand(x)
+    else:
+        np.random.seed()#do not remove: seed is fixed otherwise!
+        return np.random.rand(x)
 
 def generate_planet_distribution(nfake, m_s, r_s, per=[np.log10(0.5),np.log10(10)],phase=[0,1], cosi=[0,1],
                                  radius=[0.5, 6],mode_per="uniform", mode_phase="uniform",mode_cosi="uniform",
@@ -197,7 +223,7 @@ def generate_planet_distribution(nfake, m_s, r_s, per=[np.log10(0.5),np.log10(10
 
     for mi in ms[0]:
         # calculate the semi-major axis to determine the inclination limits.
-        ascale = semi_major_axis(10**mi,m_s,r_s)
+        ascale = semi_major_axis((10**mi)*u.d,m_s,r_s).decompose()
         cosi_ind = [0,1/ascale]
 
         if mode == 'uniform':
@@ -223,8 +249,8 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
             R_star = self.metadata['R_star']
             M_star = self.metadata['M_star']
         else:
-            warnings.warn("To generate a planet distribution for this star, we need its radius and mass. Please store"
-                          "the radius and mass in the .metadata dict or pass them explicitly to this function!")
+            warnings.warn("""To generate a planet distribution for this star, we need its radius and mass. Please store
+                          the radius and mass in the .metadata dict or pass them explicitly to this function!""")
             return
     else:
         self.metadata['R_star'] = R_star
@@ -237,8 +263,9 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
         T_eff = self.metadata['SpT']
 
     if store_planets:
-        params = generate_planet_distribution(nfake, M_star, R_star, radius=[minimum_planet_radius, maximum_planet_radius],
-                                              per=[minimum_period, maximum_period])
+        params = generate_planet_distribution(nfake, M_star, R_star,
+                                              radius=[minimum_planet_radius.to_value('R_earth'), maximum_planet_radius.to_value('R_earth')],
+                                              per=[minimum_period.to_value('d'), maximum_period.to_value('d')])
         params[0] = np.log10(params[0])
         planets = pd.DataFrame({'logP': params[0], 'phase': params[1], 'cosi': params[3], 'r_p': params[2],
                                 'depth': np.zeros(len(params[0])), 'duration': np.zeros(len(params[0])),
@@ -251,7 +278,8 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
                                 'teff': [T_eff] * len(params[0]),
                                 'spt': [SpT] * len(params[0])})
 
-        planets.to_csv(fname, index=False)
+        if fname is not None:
+            planets.to_csv(fname, index=False)
     else:
         if os.path.exists(fname):
             planets = pd.read_csv(fname)
