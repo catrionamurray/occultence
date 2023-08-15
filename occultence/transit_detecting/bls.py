@@ -52,7 +52,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
         transit_found=False
         transits = []
 
-
+    bls_lightcurve.timelike['flux'] = self.timelike['flux'] / bls_f_model
     bls_lightcurve.timelike['BLS_model'] = bls_f_model
     bls_lightcurve.metadata['BLS_transits_found'] = transit_found
     bls_lightcurve.metadata['BLS_transits_ind'] = transits
