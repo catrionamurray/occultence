@@ -327,10 +327,16 @@ class LightCurve:
         find_transits,
         bls,
     )
+    from ..injection import (
+        inject_transit,
+        pool_inject_transit,
+        create_lots_of_transit_params,
+        inject_lots_of_transits
+    )
 
     # from ..flare_finding import *
     # from ..read import *
     # from ..write import *
-    # from statistics import *
+    # from recovery import *
 
 
