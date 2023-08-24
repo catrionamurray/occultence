@@ -306,5 +306,11 @@ def inject_lots_of_transits(self, nfake=1000, R_star=None, M_star=None, T_eff=No
     if pool:
         lcs_with_transits = self.pool_inject_transit(planets['logP'], planets['phase'], planets['cosi'], planets['r_p'],
                                 ld, ncores, R_star=R_star, M_star=M_star)
+    else:
+        lcs_with_transits = []
+        for logp, phase, cosi, rp in zip(planets['logP'], planets['phase'], planets['cosi'], planets['r_p']):
+            lcs_with_transits.append(
+                self.inject_transit(10 ** logp * u.d, phase * (10 ** logp) * u.d, math.acos(cosi) * u.radian,
+                                    rp * u.R_earth, ld=ld))
 
     return lcs_with_transits
