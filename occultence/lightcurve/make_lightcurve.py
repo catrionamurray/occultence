@@ -331,7 +331,7 @@ class LightCurve:
         inject_transit,
         pool_inject_transit,
         create_lots_of_transit_params,
-        inject_lots_of_transits
+        inject_lots_of_transits,
     )
 
     # from ..flare_finding import *

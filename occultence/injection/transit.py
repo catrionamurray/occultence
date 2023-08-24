@@ -118,7 +118,8 @@ def pool_inject_transit(self, list_of_logpers, list_of_phase, list_of_cosi, list
 
     print("Number of processors: ", mp.cpu_count(), ". Using ", str(ncores), "cores")
     pool = mp.Pool(ncores)
-    lcs = pool.starmap(self.inject_transit, [(10**logp, phase * 10**logp, math.acos(cosi), rp, M_star, R_star, ld) for
+    lcs = pool.starmap(self.inject_transit, [((10**logp) * u.d, phase * 10**logp * u.d, math.acos(cosi) * u.radian,
+                                              rp * u.R_earth, M_star, R_star, ld) for
                                              logp, phase, cosi, rp in zip(list_of_logpers, list_of_phase, list_of_cosi,
                                                                           list_of_rp)])
 
