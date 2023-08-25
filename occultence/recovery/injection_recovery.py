@@ -27,9 +27,7 @@ def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_ov
             recovered = True
 
             if condition_on_depth is not None:
-                if recovered_params['depth'][transit] > (condition_on_depth * injected_params['depth'][planet]):
-                    recovered=True
-                else:
+                if recovered_params['depth'][transit] < (condition_on_depth * injected_params['depth'][planet]):
                     recovered=False
 
             if condition_on_overlap is not None:
@@ -38,24 +36,18 @@ def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_ov
                 overlap = min(inj_transit_end, recovered_params['epoch_end'][transit]) - \
                           max(inj_transit_start, recovered_params['epoch_start'][transit])
 
-                if overlap > (condition_on_overlap * injected_params['duration']):
-                    recovered = True
-                else:
+                if overlap < (condition_on_overlap * injected_params['duration']):
                     recovered = False
 
             if condition_on_epoch is not None:
-                if abs((recovered_params['epoch'][transit] - injected_params['epoch'][planet]).to_value('jd')) < \
+                if abs((recovered_params['epoch'][transit] - injected_params['epoch'][planet]).to_value('jd')) > \
                         condition_on_epoch.to_value('d'):
-                    recovered = True
-                else:
                     recovered = False
 
             if condition_on_period is not None:
                 period_sway = condition_on_period * injected_params['period'][planet]
-                if (recovered_params['period'][transit] > injected_params['period'][planet] - period_sway) and \
-                        (recovered_params['period'][transit] < injected_params['period'][planet] + period_sway):
-                    recovered=True
-                else:
+                if (recovered_params['period'][transit] < injected_params['period'][planet] - period_sway) or \
+                        (recovered_params['period'][transit] > injected_params['period'][planet] + period_sway):
                     recovered=False
 
             recovered_all_transits.append(recovered)
