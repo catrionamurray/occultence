@@ -1,9 +1,9 @@
 from ..imports import *
 
 def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_period=30, limitperiod=False,
-                  obj='likelihood', oversample=100.0, minpower=5, plot=True):
+                  obj='likelihood', oversample=100.0, minpower=5, plot=True, figsize=(12,4)):
     bls_lightcurve = self._create_copy()
-    transit_pd = {"period": [], "depth": [], 'duration': [], 'snr': []}
+    transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch':[], 'epoch_start':[], 'epoch_end':[], 'snr': []}
     bls_f_model, transit_params, stats, BLS_obj = self.bls(transit_durations=transit_durations,
                                                            minimum_period= minimum_period,
                                                            maximum_period=maximum_period,
@@ -21,11 +21,11 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
         if len(bls_transits) > 0:
             for b in range(len(bls_transits)):
                 if bls_transits[b] > 0:
-                    mid_transit = stats['transit_times'][b].value
-                    transit_start = mid_transit - (0.5 * transit_params[2].to_value('d'))
-                    transit_end = mid_transit + (0.5 * transit_params[2].to_value('d'))
+                    mid_transit = stats['transit_times'][b]#.value
+                    transit_start = mid_transit - (0.5 * transit_params[2])#.to_value('d'))
+                    transit_end = mid_transit + (0.5 * transit_params[2])#.to_value('d'))
 
-                    recovered_per = np.log10(transit_params[0].to_value('d'))
+                    recovered_per = transit_params[0]#np.log10(transit_params[0].to_value('d'))
                     recovered_dur = transit_end - transit_start
                     recovered_depth = stats['depth'][0]
                     snr = (recovered_depth * np.sqrt(bls_transits[b])) / np.nanmedian(self.uncertainty)
@@ -33,17 +33,20 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                     transit_pd["period"].append(recovered_per)
                     transit_pd["depth"].append(recovered_depth)
                     transit_pd['duration'].append(recovered_dur)
+                    transit_pd['epoch'].append(mid_transit)
+                    transit_pd['epoch_start'].append(transit_start)
+                    transit_pd['epoch_end'].append(transit_end)
                     transit_pd['snr'].append(snr)
 
                     if plot:
-                        plt.figure(figsize=(36, 4))
-                        plt.plot(self.time.value, self.flux, 'k.')
+                        plt.figure(figsize=figsize)
+                        plt.errorbar(self.time.value, self.flux, self.uncertainty, color='k', fmt='.')
                         plt.plot(self.time.value, bls_f_model, 'orange')
-                        plt.axvline(transit_start)
-                        plt.axvline(transit_end)
+                        plt.axvline(transit_start.value)
+                        plt.axvline(transit_end.value)
                         plt.plot(self.time.value[transits], self.flux[transits], 'b.')
-                        plt.title("SNR = %0.2f, Period = %0.2f" % (snr, recovered_per))
-                        plt.xlim(transit_start - 0.2, transit_start + 0.2)
+                        plt.title("SNR = %0.2f, Period = %0.2f" % (snr, recovered_per.value))
+                        plt.xlim(transit_start.value - 0.2, transit_start.value + 0.2)
                         plt.show()
                         plt.close()
 

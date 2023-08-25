@@ -334,6 +334,10 @@ class LightCurve:
         inject_lots_of_transits,
     )
 
+    from ..recovery import (
+        was_injected_planet_recovered,
+    )
+
     # from ..flare_finding import *
     # from ..read import *
     # from ..write import *
