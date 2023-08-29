@@ -67,10 +67,11 @@ def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None):
             return
 
     model = pytransit_model(time=self.time.value, Rp=rp, ldc=ld, t0=epoch, p=per,R=R, M=M, i=inc)
+
     a_Rs = semi_major_axis(per, M, R).decompose()
     b = a_Rs * math.cos(inc.to_value('radian'))
     sini = math.sin(inc.to_value('radian'))
-    k =(rp / R).decompose()
+    k = (rp / R).decompose()
     transit_depth = k ** 2
     transit_duration = (per / math.pi) * math.asin((1 / a_Rs) * np.sqrt((1 + k) ** 2 - b ** 2) / sini)
 
@@ -86,7 +87,7 @@ def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None):
         injected_lc.metadata['injected_planet']['depth'].append(transit_depth)
         injected_lc.metadata['injected_planet']['duration'].append(transit_duration)
     else:
-        injected_lc.metadata['injected_planet'] = {'period':[per], 'epoch':[self.time.value[0]*u.d + epoch], 'inc':[inc],
+        injected_lc.metadata['injected_planet'] = {'period':[per], 'epoch':[epoch], 'inc':[inc],
                                                    'rp':[rp], 'ld':[ld], 'depth':[transit_depth],
                                                    'duration':[transit_duration]}
     return injected_lc
@@ -267,10 +268,19 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
         params = generate_planet_distribution(nfake, M_star, R_star,
                                               radius=[minimum_planet_radius.to_value('R_earth'), maximum_planet_radius.to_value('R_earth')],
                                               per=[minimum_period.to_value('d'), maximum_period.to_value('d')])
-        params[0] = np.log10(params[0])
-        planets = pd.DataFrame({'logP': params[0], 'phase': params[1], 'cosi': params[3], 'r_p': params[2],
-                                'depth': np.zeros(len(params[0])), 'duration': np.zeros(len(params[0])),
-                                'epoch': np.zeros(len(params[0])),
+        transit_depth, transit_duration, transit_epoch = [],[],[]
+        for p in range(len(params[0])):
+            a_Rs = semi_major_axis(params[0][p] * u.d, M_star, R_star).decompose()
+            b = a_Rs * params[3][p]
+            sini = math.sin(math.acos(params[3][p]))
+            k = (params[2][p] * u.R_earth / R_star).decompose()
+            transit_depth.append(k ** 2)
+            transit_duration.append((params[0][p] / math.pi) * math.asin((1 / a_Rs) * np.sqrt(((1 + k) ** 2) - (b ** 2)) / sini))
+            transit_epoch.append((params[1][p] * params[0][p]) + self.time.value[0])
+
+        planets = pd.DataFrame({'logP': np.log10(params[0]), 'phase': params[1], 'cosi': params[3], 'r_p': params[2],
+                                'depth': transit_depth, 'duration': transit_duration,
+                                'epoch': transit_epoch,
                                 'recovered': np.zeros(len(params[0])), 'log_Prec': np.zeros(len(params[0])),
                                 'rec_depth': np.zeros(len(params[0])), 'rec_duration': np.zeros(len(params[0])),
                                 'rec_epoch': np.zeros(len(params[0])), 'run': np.zeros(len(params[0])),
@@ -308,9 +318,10 @@ def inject_lots_of_transits(self, nfake=1000, R_star=None, M_star=None, T_eff=No
                                 ld, ncores, R_star=R_star, M_star=M_star)
     else:
         lcs_with_transits = []
-        for logp, phase, cosi, rp in zip(planets['logP'], planets['phase'], planets['cosi'], planets['r_p']):
+        # for logp, phase, cosi, rp in zip(planets['logP'], planets['phase'], planets['cosi'], planets['r_p']):
+        for logp, epoch, cosi, rp in zip(planets['logP'], planets['epoch'], planets['cosi'], planets['r_p']):
             lcs_with_transits.append(
-                self.inject_transit(10 ** logp * u.d, phase * (10 ** logp) * u.d, math.acos(cosi) * u.radian,
+                self.inject_transit(10 ** logp * u.d, epoch * u.d, math.acos(cosi) * u.radian,
                                     rp * u.R_earth, ld=ld))
 
-    return lcs_with_transits
+    return lcs_with_transits, planets
