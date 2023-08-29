@@ -66,7 +66,7 @@ def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None):
                           "the radius and mass in the .metadata dict or pass them explicitly to this function!")
             return
 
-    model = pytransit_model(time=self.time.value, Rp=rp, ldc=ld, t0=epoch, p=per,R=R, M=M, i=inc)
+    model = pytransit_model(time=self.time.value, Rp=rp, ldc=ld, t0=epoch-(self.time.value[0]*u.d), p=per,R=R, M=M, i=inc)
 
     a_Rs = semi_major_axis(per, M, R).decompose()
     b = a_Rs * math.cos(inc.to_value('radian'))
