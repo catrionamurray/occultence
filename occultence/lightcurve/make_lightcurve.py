@@ -14,6 +14,7 @@ class LightCurve:
 
         # self.metadata = {'name': name}
         self._set_name(name)
+        self.metadata['target'] = name
         self.timelike = {}
         # for m in metadata:
         #     self.metadata[m] = metadata[m]

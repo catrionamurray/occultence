@@ -26,7 +26,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                     transit_end = mid_transit + (0.5 * transit_params[2])#.to_value('d'))
 
                     recovered_per = transit_params[0]#np.log10(transit_params[0].to_value('d'))
-                    recovered_dur = transit_end - transit_start
+                    recovered_dur = (transit_end - transit_start).value * u.d
                     recovered_depth = stats['depth'][0]
                     snr = (recovered_depth * np.sqrt(bls_transits[b])) / np.nanmedian(self.uncertainty)
 
