@@ -23,4 +23,5 @@ def bin(self, dt, bin_func=np.nanmedian, **kw):
             else:
                 binned_lc.timelike[t] = bin_ts[t]
 
+    binned_lc._set_name(binned_lc.name + "_bin")
     return binned_lc

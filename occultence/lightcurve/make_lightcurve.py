@@ -12,7 +12,8 @@ class LightCurve:
 
         self._core_dictionaries = ["timelike", "metadata"]
 
-        self.metadata = {'name': name}
+        # self.metadata = {'name': name}
+        self._set_name(name)
         self.timelike = {}
         # for m in metadata:
         #     self.metadata[m] = metadata[m]
@@ -59,6 +60,10 @@ class LightCurve:
     def __repr__(self):
         return f"<🌟 Lightcurve {self.metadata['name']} ({self.ntime}t) 🌟>"
     def _sort(self):
+        """
+        Sort all timelike quantities in light curve by time
+        :return:
+        """
         i_time = np.argsort(self.time)
         if "original_time_index" not in self.timelike:
             self.timelike["original_time_index"] = np.arange(self.ntime)
@@ -66,6 +71,13 @@ class LightCurve:
         for k in self.timelike:
             if self.timelike[k] is not None:
                 self.timelike[k] = self.timelike[k][i_time]
+
+    def _set_name(self, name):
+        if hasattr(self, 'metadata'):
+            self.metadata['name'] = name
+        else:
+            self.metadata = {'name':name}
+
     @property
     def name(self):
         """
@@ -336,6 +348,7 @@ class LightCurve:
 
     from ..recovery import (
         was_injected_planet_recovered,
+        full_injection_recovery
     )
 
     # from ..flare_finding import *

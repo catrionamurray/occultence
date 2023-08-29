@@ -133,6 +133,8 @@ def clean(self,
         cleaned_lightcurve.timelike[k] = cleaned
     # self.cleaned = cleaned_lightcurve
 
+    cleaned_lightcurve._set_name(cleaned_lightcurve.name + "_clean")
+
     return cleaned_lightcurve
 
 def get_clean_mask(self):

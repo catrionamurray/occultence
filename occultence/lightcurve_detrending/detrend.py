@@ -69,6 +69,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
     for k in gp_kernel:
         detrended_lightcurve.metadata['kernel'][k] = gp_kernel[k]
 
+    detrended_lightcurve._set_name(detrended_lightcurve.name + "_gpdetrend")
     return detrended_lightcurve
 
 

@@ -61,6 +61,8 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
     bls_lightcurve.metadata['BLS_transits_ind'] = transits
     bls_lightcurve.metadata['BLS_transits_params'] = transit_pd
 
+    bls_lightcurve._set_name(bls_lightcurve.name + "_bls")
+
     return  bls_lightcurve
 
 

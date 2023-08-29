@@ -44,7 +44,7 @@ def pytransit_model(time,
     flux = tm.evaluate(k=k, ldc=ldc, t0=time[0] + t0.to_value('d'), p=p.to_value('d'), a=a_Rs, i=i.to_value('radian'))
     return flux
 
-def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None):
+def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None, i=None):
     """
 
     :param self:
@@ -90,6 +90,11 @@ def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None):
         injected_lc.metadata['injected_planet'] = {'period':[per], 'epoch':[epoch], 'inc':[inc],
                                                    'rp':[rp], 'ld':[ld], 'depth':[transit_depth],
                                                    'duration':[transit_duration]}
+    if i is None:
+        injected_lc._set_name(injected_lc.name + "_inject")
+    else:
+        injected_lc._set_name(f"{injected_lc.name}_inject{i}")
+
     return injected_lc
 
 def pool_inject_transit(self, list_of_logpers, list_of_phase, list_of_cosi, list_of_rp, ld, ncores, R_star=None,
@@ -319,9 +324,9 @@ def inject_lots_of_transits(self, nfake=1000, R_star=None, M_star=None, T_eff=No
     else:
         lcs_with_transits = []
         # for logp, phase, cosi, rp in zip(planets['logP'], planets['phase'], planets['cosi'], planets['r_p']):
-        for logp, epoch, cosi, rp in zip(planets['logP'], planets['epoch'], planets['cosi'], planets['r_p']):
+        for i, (logp, epoch, cosi, rp) in enumerate(zip(planets['logP'], planets['epoch'], planets['cosi'], planets['r_p'])):
             lcs_with_transits.append(
                 self.inject_transit(10 ** logp * u.d, epoch * u.d, math.acos(cosi) * u.radian,
-                                    rp * u.R_earth, ld=ld))
+                                    rp * u.R_earth, ld=ld, i=i))
 
     return lcs_with_transits, planets
