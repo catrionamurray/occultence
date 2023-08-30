@@ -7,26 +7,29 @@ def full_injection_recovery(self,
                             maximum_planet_radius=3 * u.R_earth,
                             minimum_period=0.5 * u.d,
                             maximum_period=0.5 * u.d,
+                            ld=[0.385, 0.304],
                             clean_kw = {'dust_removal':False, 'bad_weather_removal':True, 'cosmics_removal':True,
                                         'cosmic_boxsize':0.08,'cosmic_nsigma':3},
                             gp_bin = 20 * u.minute,
                             gp_kw = {'do_first_sigma_clip':True, 'do_second_sigma_clip':True,
                                      'running_mean_boxsize':0.08, 'nsigma':3, 'plot':False},
                             bls_kw = {"minimum_period":0.5, "maximum_period":10,
-                                      'transit_durations':np.linspace(0.01, 0.1, 10), 'plot':True},
+                                      'transit_durations':np.linspace(0.01, 0.1, 10), 'plot':False},
                             bls_bin=7.5 * u.minute,
                             recovery_kw = {'condition_on_epoch':1 * u.hour},
                             plot=False,
+                            verbose=False,
                             ):
 
     lcs_with_transits, planets = self.inject_lots_of_transits(nfake=nfake, pool=pool,
                                                               minimum_planet_radius=minimum_planet_radius,
                                                               maximum_planet_radius=maximum_planet_radius,
                                                               minimum_period=minimum_period,
-                                                              maximum_period=maximum_period, )
+                                                              maximum_period=maximum_period,
+                                                              ld=ld)
 
-    total_injected = len(lcs_with_transits)
-    total_recovered = 0
+    # total_injected = len(lcs_with_transits)
+    # total_recovered = 0
 
     clean_lcs, gp_lcs, bls_lcs = [],[],[]
 
@@ -62,15 +65,16 @@ def full_injection_recovery(self,
         # determine whether the injected planet was adequately recovered
         if bls_targ.metadata['BLS_transits_found'] == True:
             recovered = False
-            print("Transit found!")
-            # print(bls_targ.metadata, "\n")
+            if verbose:
+                print("Transit found!")
+
             rec = bls_targ.was_injected_planet_recovered(**recovery_kw)
             # loop over all recovered transits (in this case most likely 1):
             for r in range(len(bls_targ.metadata['BLS_transits_params']['depth'])):
                 if rec[0][r]:
                     recovered = True
             if recovered:
-                total_recovered += 1
+                # total_recovered += 1
                 planets.loc[i, 'recovered'] = 1.0
                 planets.loc[i,'log_Prec'] = bls_targ.metadata['BLS_transits_params']['period'][0].to_value('d')
                 planets.loc[i,'rec_depth'] = bls_targ.metadata['BLS_transits_params']['depth'][0]
@@ -78,14 +82,15 @@ def full_injection_recovery(self,
                 planets.loc[i,'rec_epoch']= bls_targ.metadata['BLS_transits_params']['epoch'][0].value
                 planets.loc[i,'snr'] = bls_targ.metadata['BLS_transits_params']['snr'][0]
         else:
-            print("No transit found!\n")
+            if verbose:
+                print("No transit found!\n")
 
         bls_lcs.append(bls_targ)
 
     return lcs_with_transits, clean_lcs, gp_lcs, bls_lcs, planets
 
 def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_overlap=None, condition_on_epoch=None,
-                                  condition_on_period=None):
+                                  condition_on_period=None, condition_on_snr=None):
     """
     Returns a list of booleans whether each transit injected into the light curve was recovered by BLS based on user-
     defined conditions.
@@ -98,6 +103,7 @@ def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_ov
     be recovered.
     :param condition_on_period: Fraction from 0-1 of injected period that needs to be recovered (e.g. 0.1 means the
     recovered period must match the injected period to within 10%)
+    :param condition_on_snr: SNR threshold for a transit to be recovered successfully.
     :return:
     """
     recovered_all_planets = []
@@ -132,6 +138,10 @@ def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_ov
                 period_sway = condition_on_period * injected_params['period'][planet]
                 if (recovered_params['period'][transit] < injected_params['period'][planet] - period_sway) or \
                         (recovered_params['period'][transit] > injected_params['period'][planet] + period_sway):
+                    recovered=False
+
+            if condition_on_snr is not None:
+                if recovered_params['snr'][transit] < condition_on_snr:
                     recovered=False
 
             recovered_all_transits.append(recovered)

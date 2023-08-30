@@ -41,6 +41,7 @@ def gp(x,
        rotation_amp=None,
        plot=False,
        figsize=(12,4),
+       verbose=False
        ):
 
     x_pred = np.linspace(np.min(x), np.max(x), 1000)
@@ -61,50 +62,60 @@ def gp(x,
         sinexp = george.kernels.ExpSine2Kernel(gamma=rotation_amp,log_period=np.log(rotation_period))
         gpkernel = amp * (sqexp*sinexp)
         kernel = "quasi-periodic"
-        print(f"Fitting rotation with quasi-periodic GP, period = {rotation_period}d...")
+        if verbose:
+            print(f"Fitting rotation with quasi-periodic GP, period = {rotation_period}d...")
     else:
         gpkernel = amp * sqexp
         kernel = "square_exponential"
-        print(f"Fitting rotation with square-exponential GP...")
+        if verbose:
+            print(f"Fitting rotation with square-exponential GP...")
 
     gaussproc = george.GP(gpkernel,white_noise=np.log(np.nanmedian(yerr)),fit_white_noise=True)
     gaussproc.compute(x, yerr)
 
-    print("Initial Parameter Vector: ", gaussproc.get_parameter_vector())
+    if verbose:
+        print("Initial Parameter Vector: ", gaussproc.get_parameter_vector())
     if kernel == "quasi-periodic":
         p = gaussproc.get_parameter_vector()
-        print('Initial Params: AMP = ', str(math.exp(p[1])), ', SQEXP= ', str(math.exp(p[2])),
-              ', GAMMA= ', str(p[3]), ", Period = ", str(math.exp(p[4])), " days",', JITTER = ',
-              str(math.exp(p[0])))
+        if verbose:
+            print('Initial Params: AMP = ', str(math.exp(p[1])), ', SQEXP= ', str(math.exp(p[2])),
+                  ', GAMMA= ', str(p[3]), ", Period = ", str(math.exp(p[4])), " days",', JITTER = ',
+                  str(math.exp(p[0])))
     else:
         p = gaussproc.get_parameter_vector()
-        print('Initial Params: AMP = ', str(math.exp(p[1])), ', SQEXP= ', str(math.exp(p[2])),
-              ', JITTER = ', str(math.exp(p[0])))
+        if verbose:
+            print('Initial Params: AMP = ', str(math.exp(p[1])), ', SQEXP= ', str(math.exp(p[2])),
+                  ', JITTER = ', str(math.exp(p[0])))
 
-    print("Initial ln-likelihood: {0:.2f}".format(gaussproc.log_likelihood(y)))
+    if verbose:
+        print("Initial ln-likelihood: {0:.2f}".format(gaussproc.log_likelihood(y)))
 
     soln = minimize(nllGP, gaussproc.get_parameter_vector(), bounds=gaussproc.get_parameter_bounds(),
                     jac=grad_nllGP, method="L-BFGS-B", args=(y, x, yerr, gaussproc))
     p1 = soln.x
 
-    print('Fitted GP HPs:', p1)
+    if verbose:
+        print('Fitted GP HPs:', p1)
     if kernel == "quasi-periodic":
-        print('Fitted Params: AMP = ', str(math.exp(p1[1])), ', SQEXP= ', str(math.exp(p1[2])), ', GAMMA= ',
-              str(p1[3]), ", Period = ",
-              str(math.exp(p1[4])), " days", ', JITTER = ', str(math.exp(p1[0])))
+        if verbose:
+            print('Fitted Params: AMP = ', str(math.exp(p1[1])), ', SQEXP= ', str(math.exp(p1[2])), ', GAMMA= ',
+                  str(p1[3]), ", Period = ",
+                  str(math.exp(p1[4])), " days", ', JITTER = ', str(math.exp(p1[0])))
         hp = {'amp': math.exp(p1[1]), 'sqexp': math.exp(p1[2]), 'gamma': p1[3], 'period': math.exp(p1[4]),
               'jitter': math.exp(p1[0])}
     else:
         p = gaussproc.get_parameter_vector()
-        print('Fitted Params: AMP = ', str(math.exp(p1[1])), ', SQEXP= ', str(math.exp(p1[2])), ', JITTER = ',
-              str(math.exp(p1[0])))
+        if verbose:
+            print('Fitted Params: AMP = ', str(math.exp(p1[1])), ', SQEXP= ', str(math.exp(p1[2])), ', JITTER = ',
+                  str(math.exp(p1[0])))
         hp = {'amp': math.exp(p1[1]), 'sqexp': math.exp(p1[2]), 'jitter': math.exp(p1[0])}
 
     gaussproc.set_parameter_vector(p1)
     gaussproc.compute(x, yerr)
     jitter = math.exp(p[0])
 
-    print("Final ln-likelihood: {0:.2f}".format(gaussproc.log_likelihood(y)))
+    if verbose:
+        print("Final ln-likelihood: {0:.2f}".format(gaussproc.log_likelihood(y)))
     mu_zero, var = gaussproc.predict(y, x, return_var=True)
     mu = mu_zero + 1
 

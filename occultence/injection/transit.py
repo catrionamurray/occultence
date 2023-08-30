@@ -66,7 +66,8 @@ def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None, i=None):
                           "the radius and mass in the .metadata dict or pass them explicitly to this function!")
             return
 
-    model = pytransit_model(time=self.time.value, Rp=rp, ldc=ld, t0=epoch-(self.time.value[0]*u.d), p=per,R=R, M=M, i=inc)
+    model = pytransit_model(time=self.time.value, Rp=rp, ldc=ld, t0=epoch-(self.time.value[0]*u.d), p=per, R=R, M=M,
+                            i=inc)
 
     a_Rs = semi_major_axis(per, M, R).decompose()
     b = a_Rs * math.cos(inc.to_value('radian'))
@@ -83,13 +84,15 @@ def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None, i=None):
         injected_lc.metadata['injected_planet']['epoch'].append(epoch)
         injected_lc.metadata['injected_planet']['inc'].append(inc)
         injected_lc.metadata['injected_planet']['rp'].append(rp)
+        injected_lc.metadata['injected_planet']['a'].append(a_Rs * R)
+        injected_lc.metadata['injected_planet']['a_Rs'].append(a_Rs)
         injected_lc.metadata['injected_planet']['ld'].append(ld)
         injected_lc.metadata['injected_planet']['depth'].append(transit_depth)
         injected_lc.metadata['injected_planet']['duration'].append(transit_duration)
     else:
         injected_lc.metadata['injected_planet'] = {'period':[per], 'epoch':[epoch], 'inc':[inc],
-                                                   'rp':[rp], 'ld':[ld], 'depth':[transit_depth],
-                                                   'duration':[transit_duration]}
+                                                   'rp':[rp], 'a':[a_Rs * R], 'a_Rs':[a_Rs], 'ld':[ld],
+                                                   'depth':[transit_depth], 'duration':[transit_duration]}
     if i is None:
         injected_lc._set_name(injected_lc.name + "_inject")
     else:
@@ -273,9 +276,11 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
         params = generate_planet_distribution(nfake, M_star, R_star,
                                               radius=[minimum_planet_radius.to_value('R_earth'), maximum_planet_radius.to_value('R_earth')],
                                               per=[minimum_period.to_value('d'), maximum_period.to_value('d')])
-        transit_depth, transit_duration, transit_epoch = [],[],[]
+        transit_depth, transit_duration, transit_epoch, transit_a, transit_a_Rs = [],[],[],[],[]
         for p in range(len(params[0])):
             a_Rs = semi_major_axis(params[0][p] * u.d, M_star, R_star).decompose()
+            transit_a_Rs.append(a_Rs)
+            transit_a.append(a_Rs * R_star)
             b = a_Rs * params[3][p]
             sini = math.sin(math.acos(params[3][p]))
             k = (params[2][p] * u.R_earth / R_star).decompose()
@@ -285,7 +290,7 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
 
         planets = pd.DataFrame({'logP': np.log10(params[0]), 'phase': params[1], 'cosi': params[3], 'r_p': params[2],
                                 'depth': transit_depth, 'duration': transit_duration,
-                                'epoch': transit_epoch,
+                                'epoch': transit_epoch, 'a':transit_a, 'a_Rs':transit_a_Rs,
                                 'recovered': np.zeros(len(params[0])), 'log_Prec': np.zeros(len(params[0])),
                                 'rec_depth': np.zeros(len(params[0])), 'rec_duration': np.zeros(len(params[0])),
                                 'rec_epoch': np.zeros(len(params[0])), 'run': np.zeros(len(params[0])),

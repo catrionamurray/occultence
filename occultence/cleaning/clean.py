@@ -27,6 +27,7 @@ def clean(self,
                                         'Callisto': Time([(2458384, 2458385)], format='jd', scale='tdb')},
           cosmic_boxsize: float = 0.02,
           cosmic_nsigma: int = 4,
+          verbose: bool = False,
           ):
     """
 
@@ -51,21 +52,25 @@ def clean(self,
 
     # mask where flux is nan or zero
     if nan_flux_removal:
-        print("Masking NaN fluxes...")
+        if verbose:
+            print("Masking NaN fluxes...")
         self.masks['flux_is_nan'] = np.zeros(self.ntime)
         self.masks['flux_is_nan'][np.isnan(self.flux)] = 1
     if zero_flux_removal:
-        print("Masking zero fluxes...")
+        if verbose:
+            print("Masking zero fluxes...")
         self.masks['flux_is_zero'] = np.zeros(self.ntime)
         self.masks['flux_is_zero'][self.flux==0] = 1
 
     ### Bad Weather ###
     if bad_weather_removal:
         if "bad_weather" in self.timelike:
-            print("Masking bad weather using 'bad_weather' in timelike dictionary...")
+            if verbose:
+                print("Masking bad weather using 'bad_weather' in timelike dictionary...")
             self.masks['bad_weather'] = self.timelike['bad_weather']
         else:
-            print("Masking bad weather...")
+            if verbose:
+                print("Masking bad weather...")
             if "artificial_lightcurve" in self.timelike:
                 self.mask_bad_weather(bad_weather_boxsize, bad_weather_threshvalue)
             else:
@@ -79,7 +84,8 @@ def clean(self,
     if threshold_removal:
         for thresh in thresholds:
             if thresh in self.timelike:
-                print(f"Masking {thresh}{threshold_operators[thresh]}{thresholds[thresh]}...")
+                if verbose:
+                    print(f"Masking {thresh}{threshold_operators[thresh]}{thresholds[thresh]}...")
                 if threshold_operators[thresh] in operator_dict.keys():
                     self.mask_timelike_threshold(timelike_key=thresh,
                                                  threshold=thresholds[thresh],
@@ -102,7 +108,8 @@ def clean(self,
 
     ### Dust Crossing Issues ###
     if dust_removal:
-        print(f"Masking dust-crossing events...")
+        if verbose:
+            print(f"Masking dust-crossing events...")
         starts = [d[0] for d in dust_crossing_events[self.telescope]]
         ends = [d[1] for d in dust_crossing_events[self.telescope]]
         self.mask_dust(starts_of_dust_periods=starts,
@@ -116,7 +123,8 @@ def clean(self,
 
     ### Cosmic Ray Hits ###
     if cosmics_removal:
-        print("Masking cosmic ray hits...")
+        if verbose:
+            print("Masking cosmic ray hits...")
         self.mask_cosmics(boxsize=cosmic_boxsize, nsigma=cosmic_nsigma)
 
     self.get_clean_mask()

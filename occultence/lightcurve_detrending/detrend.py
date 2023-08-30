@@ -3,7 +3,7 @@ from .gp import *
 from .sigma_clipping import first_sigma_clip, second_sigma_clip
 
 def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma=3, running_mean_boxsize=0.04,
-                        rotation_period=None, rotation_amp=None, binkw={}, plot=True, figsize=(12, 4)):
+                        rotation_period=None, rotation_amp=None, plot=True, figsize=(12, 4), verbose=False):
 
     detrended_lightcurve = self._create_copy()
 
@@ -48,7 +48,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
     gp_mu, gp_var, gp_jitter, gp_mu_og, gp_var_og, gp_kernel, gp_func = gp(x[cond_nans], y[cond_nans]-1, yerr[cond_nans], x,
                                                                   rotation_period=rotation_period,
                                                                   rotation_amp=rotation_amp,
-                                                                  plot=plot,figsize=figsize)
+                                                                  plot=plot,figsize=figsize, verbose=verbose)
 
     detrended_lightcurve.timelike['gp_model'] = (gp_mu_og+1)
     detrended_lightcurve.timelike['gp_model_err'] = np.sqrt(gp_var_og)

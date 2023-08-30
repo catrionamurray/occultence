@@ -1,7 +1,7 @@
 from ..imports import *
 
 def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_period=30, limitperiod=False,
-                  obj='likelihood', oversample=100.0, minpower=5, plot=True, figsize=(12,4)):
+                  obj='likelihood', oversample=100.0, minpower=5, plot=True, figsize=(12,4), verbose=False):
     bls_lightcurve = self._create_copy()
     transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch':[], 'epoch_start':[], 'epoch_end':[], 'snr': []}
     bls_f_model, transit_params, stats, BLS_obj = self.bls(transit_durations=transit_durations,
@@ -10,7 +10,8 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                                                            limitperiod=limitperiod,
                                                            obj=obj,
                                                            oversample=oversample,
-                                                           minpower=minpower)
+                                                           minpower=minpower,
+                                                           verbose=verbose)
 
     if len(stats)>0:
         bls_transits = stats['per_transit_count']
@@ -66,8 +67,10 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
     return  bls_lightcurve
 
 
-def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, obj, oversample, minpower):
-    print("Running BLS Search")
+def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, obj, oversample, minpower, verbose):
+
+    if verbose:
+        print("Running BLS Search")
 
     if limitperiod:
         maximum_period = min(30, max(self.time) - min(self.time))
@@ -77,7 +80,8 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
     pg_d = BLS_d.power(periods, transit_durations, objective=obj, oversample=oversample)
     pers, power_d, epoch_d, depth_d, durs = pg_d.period, pg_d.power, pg_d.transit_time, pg_d.depth, pg_d.duration
 
-    print("Number of Periods Checked: ", len(pers))
+    if verbose:
+        print("Number of Periods Checked: ", len(pers))
     max_power = np.argmax(power_d)
 
     if np.count_nonzero(np.isfinite(power_d)) > 0:
@@ -92,11 +96,13 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
             f_model = BLS_d.model(t_model=self.time, period=best_per_d, duration=best_dur_d, transit_time=best_t0_d)
             return f_model, [best_per_d, best_t0_d, best_dur_d, best_depth_d], stats, BLS_d
         else:
-            print("No transits detected!")
+            if verbose:
+                print("No transits detected!")
             return np.ones(len(self.time)), [], [], []
 
     else:
-        print("No transits detected!")
+        if verbose:
+            print("No transits detected!")
         return np.ones(len(self.time)), [], [], []
 
 
