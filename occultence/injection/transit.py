@@ -291,12 +291,12 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
         planets = pd.DataFrame({'logP': np.log10(params[0]), 'phase': params[1], 'cosi': params[3], 'r_p': params[2],
                                 'depth': transit_depth, 'duration': transit_duration,
                                 'epoch': transit_epoch, 'a':transit_a, 'a_Rs':transit_a_Rs,
-                                'recovered': np.zeros(len(params[0])), 'log_Prec': np.zeros(len(params[0])),
-                                'rec_depth': np.zeros(len(params[0])), 'rec_duration': np.zeros(len(params[0])),
-                                'rec_epoch': np.zeros(len(params[0])), 'run': np.zeros(len(params[0])),
-                                'snr': np.zeros(len(params[0])), 'target': [self.name] * len(params[0]),
-                                'r_s': [R_star] * len(params[0]), 'm_s': [M_star] * len(params[0]),
-                                'teff': [T_eff] * len(params[0]),
+                                'recovered': np.zeros(len(params[0])), 'observed': np.zeros(len(params[0])),
+                                'log_Prec': np.zeros(len(params[0])), 'rec_depth': np.zeros(len(params[0])),
+                                'rec_duration': np.zeros(len(params[0])), 'rec_epoch': np.zeros(len(params[0])),
+                                'run': np.zeros(len(params[0])), 'snr': np.zeros(len(params[0])),
+                                'target': [self.name] * len(params[0]), 'r_s': [R_star] * len(params[0]),
+                                'm_s': [M_star] * len(params[0]), 'teff': [T_eff] * len(params[0]),
                                 'spt': [SpT] * len(params[0])})
 
         if fname is not None:

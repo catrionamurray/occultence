@@ -75,17 +75,19 @@ def full_injection_recovery(self,
                     recovered = True
             if recovered:
                 # total_recovered += 1
-                planets.loc[i, 'recovered'] = 1.0
+                planets.loc[i,'recovered'] = 1.0
                 planets.loc[i,'log_Prec'] = bls_targ.metadata['BLS_transits_params']['period'][0].to_value('d')
                 planets.loc[i,'rec_depth'] = bls_targ.metadata['BLS_transits_params']['depth'][0]
                 planets.loc[i,'rec_duration']= bls_targ.metadata['BLS_transits_params']['duration'][0].to_value('d')
                 planets.loc[i,'rec_epoch']= bls_targ.metadata['BLS_transits_params']['epoch'][0].value
                 planets.loc[i,'snr'] = bls_targ.metadata['BLS_transits_params']['snr'][0]
+                planets.loc[i,'observed'] = int(bls_targ.was_planet_observed())
         else:
             if verbose:
                 print("No transit found!\n")
 
         bls_lcs.append(bls_targ)
+
 
     return lcs_with_transits, clean_lcs, gp_lcs, bls_lcs, planets
 
