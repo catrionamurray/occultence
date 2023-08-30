@@ -149,3 +149,41 @@ def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_ov
 
     return recovered_all_planets
 
+def was_planet_observed(self, fraction_overlap=0.5, planet_i=0):
+
+    # set times of the first transit in the observation span
+    duration = self.metadata['injected_planet']['duration'][planet_i]
+    period = self.metadata['injected_planet']['period'][planet_i]
+    transit_mid = self.metadata['injected_planet']['epoch'][planet_i]
+    transit_start = transit_mid - (0.5*duration)
+    transit_end = transit_mid + (0.5*duration)
+
+    observed = 0
+
+    days = self.split_lightcurve(split_every=0.5*u.d)[0]
+    for day in days:
+        while transit_start <= day[-1]:
+            if transit_end >= day[0]:
+                overlap = min(transit_end, day[-1]) - max(transit_start, day[0])
+                if overlap >= (fraction_overlap * duration):
+                    observed = 1
+            transit_start = transit_start + period
+            transit_end = transit_end + period
+    return bool(observed)
+
+def split_lightcurve(self, split_every=0.5*u.d):
+    t = self.time.value * u.d
+    start = t[0]
+    nextdays = t[np.absolute(t - start) > split_every]
+    split = []
+
+    while nextdays != []:
+        start = nextdays[0]
+        ind_st = np.where(t == start)[0][0]
+        split.append(ind_st)
+        time = t[ind_st:]
+        nextdays = time[np.absolute(time - start) > split_every]
+
+    times = np.split(t, split)
+
+    return times, split

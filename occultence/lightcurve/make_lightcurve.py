@@ -349,7 +349,9 @@ class LightCurve:
 
     from ..recovery import (
         was_injected_planet_recovered,
-        full_injection_recovery
+        full_injection_recovery,
+        split_lightcurve,
+        was_planet_observed,
     )
 
     # from ..flare_finding import *
