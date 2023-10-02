@@ -12,7 +12,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                                                            oversample=oversample,
                                                            minpower=minpower,
                                                            verbose=verbose)
-
+    
     if len(stats)>0:
         bls_transits = stats['per_transit_count']
         transits = np.where(np.array(bls_f_model) < np.nanmedian(bls_f_model))[0]
@@ -52,6 +52,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                         plt.close()
 
                     trans_num = trans_num + 1
+                
     else:
         transit_found=False
         transits = []
@@ -76,13 +77,21 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
         maximum_period = min(30, max(self.time) - min(self.time))
 
     periods = np.linspace(minimum_period, maximum_period, num=10000)
-    BLS_d = BoxLeastSquares(self.time, self.flux, dy=self.uncertainty)
+
+    nan_mask = ~np.isnan(self.flux)
+    BLS_d = BoxLeastSquares(self.time[nan_mask], self.flux[nan_mask], dy=self.uncertainty[nan_mask])
+
     pg_d = BLS_d.power(periods, transit_durations, objective=obj, oversample=oversample)
     pers, power_d, epoch_d, depth_d, durs = pg_d.period, pg_d.power, pg_d.transit_time, pg_d.depth, pg_d.duration
 
+    max_power = np.argmax(power_d)
+
     if verbose:
         print("Number of Periods Checked: ", len(pers))
-    max_power = np.argmax(power_d)
+        print("Period: ", pers[max_power])
+        print("Duration: ", durs[max_power])
+        print("Depth: ", depth_d[max_power])
+        print("Power: ", power_d[max_power])
 
     if np.count_nonzero(np.isfinite(power_d)) > 0:
 
