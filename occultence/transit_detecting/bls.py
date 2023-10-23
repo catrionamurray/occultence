@@ -1,7 +1,9 @@
 from ..imports import *
 
+#changed oversampling factor to 30 (from 100). 
+
 def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_period=30, limitperiod=False,
-                  obj='likelihood', oversample=100.0, minpower=5, plot=True, figsize=(12,4), verbose=False):
+                  obj='likelihood', oversample=30.0, minpower=5, plot=True, figsize=(12,4), verbose=False):
     bls_lightcurve = self._create_copy()
     transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch':[], 'epoch_start':[], 'epoch_end':[], 'snr': []}
     bls_f_model, transit_params, stats, BLS_obj = self.bls(transit_durations=transit_durations,
