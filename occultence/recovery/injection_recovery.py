@@ -1,5 +1,7 @@
 from ..imports import *
 
+#changed nr of tested durations to 4(from 10): 0.01, 0.04, 0.07, 0.1
+
 def full_injection_recovery(self,
                             nfake=10,
                             pool=False,
@@ -14,7 +16,7 @@ def full_injection_recovery(self,
                             gp_kw = {'do_first_sigma_clip':True, 'do_second_sigma_clip':True,
                                      'running_mean_boxsize':0.08, 'nsigma':3, 'plot':False},
                             bls_kw = {"minimum_period":0.5, "maximum_period":10,
-                                      'transit_durations':np.linspace(0.01, 0.1, 10), 'plot':False, 'verbose': False},
+                                      'transit_durations':np.linspace(0.01, 0.1, 4), 'plot':False, 'verbose': False},
                             bls_bin=7.5 * u.minute,
                             recovery_kw = {'condition_on_epoch':1 * u.hour},
                             plot=False,

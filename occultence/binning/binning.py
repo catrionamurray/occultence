@@ -23,12 +23,14 @@ def bin(self, dt, bin_func=np.nanmedian, **kw):
         if i == 0:
             bin_ts = bin_ts1.copy()
         else:
-            for j in range(len(bin_ts1["time_bin_start"].value)):
+            bin_ts = astropy.table.vstack([bin_ts,bin_ts1])
+
+            """for j in range(len(bin_ts1["time_bin_start"].value)):
                 bin_ts.add_row({'time_bin_start': bin_ts1["time_bin_start"][j],
                      'time_bin_size': bin_ts1["time_bin_size"][j],
                      'flux': bin_ts1["flux"][j],
                      'uncertainty':bin_ts1["uncertainty"][j],
-                     'original_time_index': bin_ts1["original_time_index"][j]})
+                     'original_time_index': bin_ts1["original_time_index"][j]})"""
     #end replaced
 
 
