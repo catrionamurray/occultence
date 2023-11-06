@@ -16,10 +16,19 @@ class LightCurve:
         self._set_name(name)
         self.metadata['target'] = name
         self.timelike = {}
+        self.masks = {}
+        self.plot_method = LightCurve.plot_split
         # for m in metadata:
         #     self.metadata[m] = metadata[m]
 
         if (type(timelike) == dict):
+            if (time is not None):
+                timelike['time'] = time
+            if (flux is not None):
+                timelike['flux'] = flux
+            if (uncertainty is not None):
+                timelike['uncertainty'] = uncertainty
+
             self._initialize_from_dictionaries(
                 timelike=timelike,
                 metadata=metadata)
@@ -295,27 +304,81 @@ class LightCurve:
         key : str
             The attribute we're trying to get.
         """
-        if key not in self._core_dictionaries:
-            for dictionary_name in self._core_dictionaries:
-                try:
-                    return self.__dict__[dictionary_name][key]
-                except KeyError:
-                    pass
+        if key == "_core_dictionaries":
+            try:
+                return self.__dict__[key]
+            except KeyError:
+                pass
+            except RecursionError:
+                return
+        else:
+            if key not in self._core_dictionaries:
+                for dictionary_name in self._core_dictionaries:
+                    try:
+                        return self.__dict__[dictionary_name][key]
+                    except KeyError:
+                        pass
         message = f".{key} does not exist for this LightCurve"
         raise AttributeError(message)
 
-    def plot(self, ax=None, figsize=(12,4), ylims=[0.98,1.02], **kw):
+    def remove_nans(self,):
+        new_lc = self._create_copy()
+
+        if np.count_nonzero(~np.isfinite(new_lc.flux)) > 0:
+            ind_finite = np.where(np.isfinite(new_lc.flux) == True)
+            for k in new_lc.timelike.keys():
+                new_lc.timelike[k] = new_lc.timelike[k][ind_finite]
+
+        if np.count_nonzero(~np.isfinite(new_lc.uncertainty)) > 0:
+            ind_finite = np.where(np.isfinite(new_lc.uncertainty) == True)
+            for k in new_lc.timelike.keys():
+                new_lc.timelike[k] = new_lc.timelike[k][ind_finite]
+
+        return new_lc
+
+    def plot(self, **kw):
+        return self.plot_method(self,**kw)
+
+    def plot_all(self, ax=None, figsize=(12,4), ylims=[0.98,1.02], color='C0', **kw):
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
 
-        ax.errorbar(self.time.value, self.flux, self.uncertainty, fmt='.', **kw)
+        ax.plot(self.time.value, self.flux, '.', color=color **kw)
+        ax.errorbar(self.time.value, self.flux, self.uncertainty, fmt='.', color=color, alpha=0.1, **kw)
         ax.set_ylim(ylims[0], ylims[1])
         ax.set_ylabel("Flux")
         ax.set_xlabel("Time [d]")
         ax.legend()
         return ax
 
+    def plot_split(self, ax=None, figsize=(36,4), ylims=[0.98,1.02], color="C0", **kw):
+        i_split, _ = self.split_time()
+        if ax is None:
+            fig, ax = plt.subplots(ncols = len(i_split)-1, figsize=figsize, sharey=True)
 
+        for i,(i0, i1) in enumerate(zip(i_split[:-1],i_split[1:])):
+            ax[i].plot(self.time.value[i0:i1], self.flux[i0:i1], '.', color=color, **kw)
+            ax[i].errorbar(self.time.value[i0:i1], self.flux[i0:i1], self.uncertainty[i0:i1], fmt='.', color=color,
+                           alpha=0.1, **kw)
+        ax[0].set_ylim(ylims[0], ylims[1])
+        ax[0].set_ylabel("Flux")
+        ax[-1].set_xlabel("Time [d]")
+        ax[-1].legend()
+        return ax
+
+    def phasefold(self, period):
+        new_lc = self._create_copy()
+        t = self.time.value
+        ph_d = ((t - min(t)) % period) / period
+        ph_d[ph_d > 0.5] -= 1
+        new_lc.timelike['phase'] = ph_d
+        return new_lc
+
+
+
+    from .remove_transit import (
+        mask_existing_transit
+    )
 
     from ..cleaning import (
         clean,
@@ -332,6 +395,7 @@ class LightCurve:
     )
     from ..binning import (
         bin,
+        split_time
     )
     from ..lightcurve_detrending import (
         gp_detrend,
@@ -350,6 +414,7 @@ class LightCurve:
     from ..recovery import (
         was_injected_planet_recovered,
         full_injection_recovery,
+        single_injection_recovery,
         split_lightcurve,
         was_planet_observed,
     )
