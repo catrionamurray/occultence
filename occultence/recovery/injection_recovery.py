@@ -30,6 +30,7 @@ def full_injection_recovery(self,
                                                               maximum_period=maximum_period,
                                                               ld=ld)
 
+    bls_kw['verbose'] = verbose
     clean_lcs, gp_lcs, bls_lcs = [],[],[]
 
     for i, lc in enumerate(lcs_with_transits):

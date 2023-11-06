@@ -1,7 +1,7 @@
 from ..imports import *
 
 def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_period=30, limitperiod=False,
-                  obj='likelihood', oversample=100.0, minpower=5, return_all_transits=False,
+                  obj='likelihood', oversample=30.0, minpower=5, return_all_transits=False,
                   plot=True, figsize=(12,4), verbose=False):
 
     transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch':[], 'epoch_start':[], 'epoch_end':[], 'snr': []}
@@ -89,6 +89,10 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
 
     if verbose:
         print("Number of Periods Checked: ", len(pers))
+        print("Period: ", pers[max_power])
+        print("Duration: ", durs[max_power])
+        print("Depth: ", depth_d[max_power])
+        print("Power: ", power_d[max_power])
     max_power = np.argmax(power_d)
     sorted_ind_power = np.argsort(power_d)[::-1]
 
