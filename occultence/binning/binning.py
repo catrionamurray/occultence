@@ -31,7 +31,6 @@ def bin(self, dt, bin_func=np.nanmedian, **kw):
                      'flux': bin_ts1["flux"][j],
                      'uncertainty':bin_ts1["uncertainty"][j],
                      'original_time_index': bin_ts1["original_time_index"][j]})"""
-    # end replaced
 
 
     binned_lc = self._create_copy()
