@@ -47,7 +47,6 @@ def clean(self,
     :return:
     """
 
-    self.masks = {}
     self.metadata['thresholds'] = {}
 
     # mask where flux is nan or zero
@@ -89,7 +88,8 @@ def clean(self,
                 if threshold_operators[thresh] in operator_dict.keys():
                     self.mask_timelike_threshold(timelike_key=thresh,
                                                  threshold=thresholds[thresh],
-                                                 op=threshold_operators[thresh])
+                                                 op=threshold_operators[thresh],
+                                                 verbose=verbose)
                 else:
                     # If the thresholds_operators dictionary contains a key which isn't valid (in operator_dict)
                     message = f""" The threshold_operators dictionary passed contains the value

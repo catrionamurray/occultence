@@ -39,6 +39,8 @@ def gp(x,
        x_original,
        rotation_period=None,
        rotation_amp=None,
+       sqexp_metric=0.5,
+       amp_metric=None,
        plot=False,
        figsize=(12,4),
        verbose=False
@@ -48,8 +50,11 @@ def gp(x,
 
     # try:
     # jitter = george.kernels.ConstantKernel(log_constant=np.log(np.nanmedian(yerr)))
-    amp = george.kernels.ConstantKernel(log_constant=np.log(np.std(y)))
-    sqexp = george.kernels.ExpSquaredKernel(0.5, metric_bounds={'log_M_0_0':(np.log(0.01),np.log(1000))})
+    if amp_metric is None:
+        amp = george.kernels.ConstantKernel(log_constant=np.log(np.std(y)))
+    else:
+        amp = george.kernels.ConstantKernel(log_constant=np.log(amp_metric))
+    sqexp = george.kernels.ExpSquaredKernel(sqexp_metric, metric_bounds={'log_M_0_0': (np.log(0.01), np.log(1000))})
 
     # If the user has passed a rotation period to the GP then use quasi-periodic kernel, otherwise use a squared
     # exponential kernel.
@@ -59,7 +64,7 @@ def gp(x,
             therefore we will use 0.1 as the starting value"""
             cheerfully_suggest(message)
             rotation_amp = 0.1
-        sinexp = george.kernels.ExpSine2Kernel(gamma=rotation_amp,log_period=np.log(rotation_period))
+        sinexp = george.kernels.ExpSine2Kernel(gamma=rotation_amp, log_period=np.log(rotation_period))
         gpkernel = amp * (sqexp*sinexp)
         kernel = "quasi-periodic"
         if verbose:
@@ -70,7 +75,7 @@ def gp(x,
         if verbose:
             print(f"Fitting rotation with square-exponential GP...")
 
-    gaussproc = george.GP(gpkernel,white_noise=np.log(np.nanmedian(yerr)),fit_white_noise=True)
+    gaussproc = george.GP(gpkernel, white_noise=np.log(np.nanmedian(yerr)), fit_white_noise=True)
     gaussproc.compute(x, yerr)
 
     if verbose:

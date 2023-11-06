@@ -252,7 +252,8 @@ def generate_planet_distribution(nfake, m_s, r_s, per=[np.log10(0.5),np.log10(10
 
 def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_eff=None, SpT=None,
                                  minimum_planet_radius=0.5 * u.R_earth, maximum_planet_radius=3 * u.R_earth,
-                                 minimum_period=0.5 * u.d, maximum_period=30 * u.d, store_planets=True, fname=None,):
+                                 minimum_period=0.5 * u.d, maximum_period=30 * u.d, store_planets=True, fname=None,
+                                  **kw):
 
     if R_star is None or M_star is None:
         if "R_star" in self.metadata and "M_star" in self.metadata:
@@ -275,7 +276,7 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
     if store_planets:
         params = generate_planet_distribution(nfake, M_star, R_star,
                                               radius=[minimum_planet_radius.to_value('R_earth'), maximum_planet_radius.to_value('R_earth')],
-                                              per=[minimum_period.to_value('d'), maximum_period.to_value('d')])
+                                              per=[minimum_period.to_value('d'), maximum_period.to_value('d')], **kw)
         transit_depth, transit_duration, transit_epoch, transit_a, transit_a_Rs = [],[],[],[],[]
         for p in range(len(params[0])):
             a_Rs = semi_major_axis(params[0][p] * u.d, M_star, R_star).decompose()
@@ -316,16 +317,16 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
 def inject_lots_of_transits(self, nfake=1000, R_star=None, M_star=None, T_eff=None, SpT=None, ld = [0.385, 0.304],
                             minimum_planet_radius=0.5 * u.R_earth, maximum_planet_radius=3 * u.R_earth,
                             minimum_period=0.5 * u.d, maximum_period=30 * u.d, store_planets=True, fname=None,
-                            pool=True, ncores=1):
+                            pool=True, ncores=1, **kw):
 
     planets = self.create_lots_of_transit_params(nfake=nfake, R_star=R_star, M_star=M_star, T_eff=T_eff, SpT=SpT,
                                minimum_planet_radius=minimum_planet_radius, maximum_planet_radius=maximum_planet_radius,
                                minimum_period=minimum_period, maximum_period=maximum_period,
-                               store_planets=store_planets, fname=fname)
+                               store_planets=store_planets, fname=fname, **kw)
 
     if pool:
         lcs_with_transits = self.pool_inject_transit(planets['logP'], planets['phase'], planets['cosi'], planets['r_p'],
-                                ld, ncores, R_star=R_star, M_star=M_star)
+                                ld, ncores, R_star=R_star, M_star=M_star, **kw)
     else:
         lcs_with_transits = []
         # for logp, phase, cosi, rp in zip(planets['logP'], planets['phase'], planets['cosi'], planets['r_p']):
