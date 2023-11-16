@@ -34,7 +34,7 @@ def lsq_detrend(self, params, degree, **kw):
     params_list = [self.timelike[par] for par in params]
 
     res = least_squares(fun=fit_all_params, x0=p0, f_scale=np.median(self.uncertainty),
-                        args=[params_list, self.flux, degree])
+                        args=[params_list, self.flux, degree], **kw)
 
     total_model = res.x[0]
     for i, x_i in enumerate(params_list):
