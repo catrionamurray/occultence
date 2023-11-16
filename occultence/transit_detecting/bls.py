@@ -2,7 +2,7 @@ from ..imports import *
 
 def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_period=30, limitperiod=False,
                   obj='likelihood', oversample=30.0, minpower=5, return_all_transits=False,
-                  plot=True, figsize=(12,4), verbose=False):
+                  plot=True, figsize=(12, 4), verbose=False):
 
     transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch':[], 'epoch_start':[], 'epoch_end':[], 'snr': []}
     bls_f_model_all, transit_params_all, stats_all, BLS_obj = self.bls(transit_durations=transit_durations,
@@ -74,7 +74,8 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
     return bls_lightcurve_all
 
 
-def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, obj, oversample, minpower, return_all_transits, verbose):
+def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, obj, oversample, minpower,
+        return_all_transits, verbose):
 
     if verbose:
         print("Running BLS Search")

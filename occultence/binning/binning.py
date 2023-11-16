@@ -68,7 +68,10 @@ def split_time(self, split=0.5 * u.d):
             prev_obs_night = i + 1
         t0 = t
 
-    obs_nights_indexes.insert(0,0)
+    if len(obs_nights) == 0:
+        obs_nights = [self.time]
+
+    obs_nights_indexes.insert(0, 0)
     obs_nights_indexes.append(len(self.time))
 
     return obs_nights_indexes, obs_nights

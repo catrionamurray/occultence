@@ -79,40 +79,46 @@ def single_injection_recovery(self, lc, planets, i, clean_kw, gp_bin, gp_kw, bls
 
     # search for transit
     removed_nans = gp_smaller_binning.remove_nans()
-    bls_targ = removed_nans.find_transits(**bls_kw)
+    bls_targs = removed_nans.find_transits(**bls_kw)
 
-    # determine whether the injected planet was adequately recovered
-    if bls_targ.metadata['BLS_transits_found'] == True:
-        recovered = False
-        if verbose:
-            print("Transit was found - checking if it matches the injected transit!")
-
-        rec = bls_targ.was_injected_planet_recovered(**recovery_kw)
-        # loop over all recovered transits (in this case most likely 1):
-        for r in range(len(bls_targ.metadata['BLS_transits_params']['depth'])):
-            if rec[0][r]:
-                recovered = True
-        if recovered:
-            # total_recovered += 1
-            planets.loc[i, 'recovered'] = 1.0
-            planets.loc[i, 'log_Prec'] = bls_targ.metadata['BLS_transits_params']['period'][0].to_value('d')
-            planets.loc[i, 'rec_depth'] = bls_targ.metadata['BLS_transits_params']['depth'][0]
-            planets.loc[i, 'rec_duration'] = bls_targ.metadata['BLS_transits_params']['duration'][0].to_value('d')
-            planets.loc[i, 'rec_epoch'] = bls_targ.metadata['BLS_transits_params']['epoch'][0].to_value('d')
-            planets.loc[i, 'snr'] = bls_targ.metadata['BLS_transits_params']['snr'][0]
-            planets.loc[i, 'observed'] = int(bls_targ.was_planet_observed())
-            if verbose:
-                print("Planet was successfully recovered")
-        else:
-            if verbose:
-                print("Planet was not successfully recovered")
-    else:
+    if len(bls_targs) == 0:
         if verbose:
             print("No transit found!\n")
+    else:
+        recovered = False
+        for bls_targ in bls_targs:
+            # determine whether the injected planet was adequately recovered
+            if bls_targ.metadata['BLS_transits_found'] == True:
+
+                if verbose:
+                    print("Transit was found - checking if it matches the injected transit!")
+
+                rec = bls_targ.was_injected_planet_recovered(**recovery_kw)
+                # loop over all recovered transits (in this case most likely 1):
+                for r in range(len(bls_targ.metadata['BLS_transits_params']['depth'])):
+                    if rec[0][r]:
+                        recovered = True
+                if recovered:
+                    # total_recovered += 1
+                    planets.loc[i, 'recovered'] = 1.0
+                    planets.loc[i, 'log_Prec'] = bls_targ.metadata['BLS_transits_params']['period'][0].to_value('d')
+                    planets.loc[i, 'rec_depth'] = bls_targ.metadata['BLS_transits_params']['depth'][0]
+                    planets.loc[i, 'rec_duration'] = bls_targ.metadata['BLS_transits_params']['duration'][0].to_value('d')
+                    planets.loc[i, 'rec_epoch'] = bls_targ.metadata['BLS_transits_params']['epoch'][0].to_value('d')
+                    planets.loc[i, 'snr'] = bls_targ.metadata['BLS_transits_params']['snr'][0]
+
+                    if verbose:
+                        print("Planet was successfully recovered")
+                else:
+                    if verbose:
+                        print("Planet was not successfully recovered")
+        else:
+            if verbose:
+                print("No transit found!\n")
 
     # bls_lcs.append(bls_targ)
 
-    return clean_targ, gp_targ, bls_targ, planets
+    return clean_targ, gp_targ, bls_targs, planets
 
 def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_overlap=None, condition_on_epoch=None,
                                   condition_on_period=None, condition_on_snr=None):

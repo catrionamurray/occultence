@@ -334,5 +334,6 @@ def inject_lots_of_transits(self, nfake=1000, R_star=None, M_star=None, T_eff=No
             lcs_with_transits.append(
                 self.inject_transit(10 ** logp * u.d, epoch * u.d, math.acos(cosi) * u.radian,
                                     rp * u.R_earth, ld=ld, i=i))
+            planets.loc[i, 'observed'] = int(lcs_with_transits[-1].was_planet_observed())
 
     return lcs_with_transits, planets

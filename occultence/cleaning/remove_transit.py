@@ -1,4 +1,7 @@
-from occultence.imports import *
+from ..imports import *
+# from astropy.constants import G
+# from pytransit import QuadraticModel
+from ..injection.transit import semi_major_axis, pytransit_model
 
 def mask_existing_transit(self, period, t0, duration, buffer=1 * u.hour):
     """
@@ -29,3 +32,32 @@ def mask_existing_transit(self, period, t0, duration, buffer=1 * u.hour):
         self.masks[f'transit_{i}'][(self.time.value * u.d > transit_t-(0.5*duration)-buffer) & \
                                    (self.time.value * u.d < transit_t+(0.5*duration)+buffer)] = 1
         transit_t += period
+
+
+def model_existing_transit(self, period, t0, rp, rs, ms, ldc, inc):
+    """
+    Model existing transit in the LightCurve
+    :param self:
+    :param period:
+    :param t0:
+    :param rp:
+    :param rs:
+    :param ms:
+    :param ldc:
+    :param inc:
+    :return:
+    """
+
+    transit_model = pytransit_model(self.time.jd,
+                                    Rp=rp,
+                                    ldc=ldc,
+                                    t0=t0,
+                                    p=period,
+                                    R=rs,
+                                    M=ms,
+                                    i=inc)
+
+    without_transit = self._create_copy()
+    without_transit.timelike['flux'] = without_transit.timelike['flux'] / transit_model
+
+    return without_transit

@@ -3,4 +3,5 @@ from .clean import *
 from .bad_weather import *
 from .dust import *
 from .cosmics import *
+from .remove_transit import *
 

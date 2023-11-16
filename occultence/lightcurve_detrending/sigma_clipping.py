@@ -1,7 +1,7 @@
 from ..imports import *
 from ..utils import running_box
 
-def first_sigma_clip(y, nsigma_upper, nsigma_lower):
+def first_sigma_clip(y, nsigma_upper, nsigma_lower, **kw):
     """
     Perform an overall sigma clip.
     :param y: Data to sigma clip
@@ -9,7 +9,7 @@ def first_sigma_clip(y, nsigma_upper, nsigma_lower):
     :param nsigma_lower: Number of sigma to clip below the data.
     :return: Sigma-clipped data
     """
-    return sigma_clip(y, sigma_upper=nsigma_upper, sigma_lower=nsigma_lower).filled(np.nan)
+    return sigma_clip(y, sigma_upper=nsigma_upper, sigma_lower=nsigma_lower, **kw).filled(np.nan)
 
 def second_sigma_clip(x,y, nsigma_upper, nsigma_lower, running_mean_boxsize):
     """

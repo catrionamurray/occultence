@@ -10,16 +10,18 @@ class LightCurve:
                  metadata: dict = None,
                  **kw):
 
-        self._core_dictionaries = ["timelike", "metadata"]
+        self._core_dictionaries = ["timelike", "metadata", "metamethods"]
 
         # self.metadata = {'name': name}
         self._set_name(name)
         self.metadata['target'] = name
         self.timelike = {}
         self.masks = {}
-        self.plot_method = LightCurve.plot_split
+        self.metamethods = {'plot_method': LightCurve.plot_split}
         # for m in metadata:
         #     self.metadata[m] = metadata[m]
+        if metadata is not None:
+            self.metadata.update(**metadata)
 
         if (type(timelike) == dict):
             if (time is not None):
@@ -31,7 +33,7 @@ class LightCurve:
 
             self._initialize_from_dictionaries(
                 timelike=timelike,
-                metadata=metadata)
+                metadata=self.metadata)
         # then try to initialize from arrays
         elif (time is not None) and (flux is not None) and (uncertainty is not None):
             self._initialize_from_arrays(
@@ -41,8 +43,6 @@ class LightCurve:
                 **kw,
             )
 
-        if metadata is not None:
-            self.metadata.update(**metadata)
 
         if self.time is not None:
             if type(self.time[0]) != astropy.time.core.Time:
@@ -56,16 +56,10 @@ class LightCurve:
                                              format='jd',
                                              scale='tdb')
 
-        # for k in timelike:
-        #     if np.shape(timelike[k]) == np.shape(self.time):
-        #         self.timelike[k] = timelike[k] * 1
-        #     else:
-        #         message = f"""
-        #         Something doesn't line up!
-        #         The timelike array {k} has a shape of {timelike[k]}.
-        #         The time array has {self.ntime} times.
-        #         """
-        #         cheerfully_suggest(message)
+                i_split, _ = self.split_time()
+                if len(i_split) == 2:
+                    self.metamethods['plot_method'] = LightCurve.plot_all
+
 
     def __repr__(self):
         return f"<🌟 Lightcurve {self.metadata['name']} ({self.ntime}t) 🌟>"
@@ -86,7 +80,7 @@ class LightCurve:
         if hasattr(self, 'metadata'):
             self.metadata['name'] = name
         else:
-            self.metadata = {'name':name}
+            self.metadata = {'name': name}
 
     @property
     def name(self):
@@ -139,6 +133,16 @@ class LightCurve:
             return 0
         else:
             return len(self.time)
+
+    @property
+    def ndays(self):
+        """
+        The number of days.
+        """
+        if self.time is None:
+            return 0
+        else:
+            return len(self.split_time()[0]) - 1
 
     @property
     def dt(self):
@@ -233,7 +237,7 @@ class LightCurve:
         self._validate_core_dictionaries()
 
     def _initialize_from_dictionaries(
-        self, timelike={}, metadata={}
+        self, timelike={}, metadata={}, metamethods={}
     ):
         """
         Populate from dictionaries in the correct format.
@@ -260,6 +264,9 @@ class LightCurve:
 
         # update the metadata
         self.metadata.update(**metadata)
+
+        # update the metadata
+        self.metamethods.update(**metamethods)
 
         # validate that something reasonable got populated
         self._validate_core_dictionaries()
@@ -336,30 +343,97 @@ class LightCurve:
 
         return new_lc
 
-    def plot(self, **kw):
-        return self.plot_method(self,**kw)
+    def split_day(self, i):
+        """
+        split light curve object into individual day chunk
+        :param i:
+        :return:
+        """
+        split_lc = self._create_copy()
+        i_split, t_split = split_lc.split_time()
 
-    def plot_all(self, ax=None, figsize=(12,4), ylims=[0.98,1.02], color='C0', **kw):
+        for k, v in self.timelike.items():
+            split_lc.timelike[k] = v[i_split[i]:i_split[i + 1]]
+
+        split_lc.metamethods = {'plot_method': LightCurve.plot_all}
+
+        return split_lc
+
+    def concatenate(self, other):
+        """
+        Merge another LightCurve object into this one
+
+        Parameters
+        ----------
+        other : LightCurve
+           The other LightCurve to merge into this one.
+        """
+
+        # create an exact copy of the first object
+        new = self._create_copy()
+
+        # loop through timelike quantities
+        for k in self.timelike:
+            try:
+                if k == "time":
+                    new.timelike[k] = Time(np.hstack([self.timelike[k].jd, other.timelike[k].jd]),
+                                           format='jd', scale='tdb')
+                else:
+                    new.timelike[k] = np.hstack([self.timelike[k], other.timelike[k]])
+            except (KeyError, AttributeError):
+                cheerfully_suggest(
+                    f"""
+                .timelike['{k}'] didn't exist for one of the objects; not merging.
+                """
+                )
+
+        for k in self.metadata.keys():
+            try:
+                if k != "name":
+                    if type(new.metadata[k]) == list:
+                        new.metadata[k].append(other.metadata[k])
+                    else:
+                        new.metadata[k] = [new.metadata[k], other.metadata[k]]
+            except (KeyError, AttributeError):
+                cheerfully_suggest(
+                    f"""
+                    .metadata['{k}'] didn't exist for one of the objects; not merging.
+                    """
+                )
+
+        new.metamethods = {'plot_method': LightCurve.plot_split}
+
+        # return the new Rainbow
+        return new
+
+    def plot(self, **kw):
+        return self.metamethods['plot_method'](self, **kw)
+
+    def plot_all(self, ax=None, figsize=(12,4), ylims=[0.98,1.02], color='C0', label="", alpha=1.0, alpha_error=0.1,
+                 **kw):
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
 
-        ax.plot(self.time.value, self.flux, '.', color=color **kw)
-        ax.errorbar(self.time.value, self.flux, self.uncertainty, fmt='.', color=color, alpha=0.1, **kw)
+        ax.plot(self.time.value, self.flux, '.', color=color, alpha=alpha, label=label, **kw)
+        ax.errorbar(self.time.value, self.flux, self.uncertainty, fmt='.', color=color, alpha=alpha_error, **kw)
         ax.set_ylim(ylims[0], ylims[1])
         ax.set_ylabel("Flux")
         ax.set_xlabel("Time [d]")
         ax.legend()
         return ax
 
-    def plot_split(self, ax=None, figsize=(36,4), ylims=[0.98,1.02], color="C0", **kw):
+    def plot_split(self, ax=None, figsize=(36, 4), ylims=[0.98,1.02], alpha=1.0, color="C0", label="", alpha_error=0.1,
+                   **kw):
         i_split, _ = self.split_time()
         if ax is None:
-            fig, ax = plt.subplots(ncols = len(i_split)-1, figsize=figsize, sharey=True)
+            fig, ax = plt.subplots(ncols=len(i_split)-1, figsize=figsize, sharey=True)
+            if len(i_split) == 2:
+                ax = [ax]
 
         for i,(i0, i1) in enumerate(zip(i_split[:-1],i_split[1:])):
-            ax[i].plot(self.time.value[i0:i1], self.flux[i0:i1], '.', color=color, **kw)
+            ax[i].plot(self.time.value[i0:i1], self.flux[i0:i1], '.', color=color, alpha=alpha, label=label, **kw)
             ax[i].errorbar(self.time.value[i0:i1], self.flux[i0:i1], self.uncertainty[i0:i1], fmt='.', color=color,
-                           alpha=0.1, **kw)
+                           alpha=alpha_error, **kw)
         ax[0].set_ylim(ylims[0], ylims[1])
         ax[0].set_ylabel("Flux")
         ax[-1].set_xlabel("Time [d]")
@@ -376,12 +450,13 @@ class LightCurve:
 
 
 
-    from .remove_transit import (
-        mask_existing_transit
-    )
+    # from .remove_transit import (
+    #     mask_existing_transit
+    # )
 
     from ..cleaning import (
         clean,
+        mask_existing_transit,
         mask_timelike_threshold,
         mask_bad_weather,
         mask_cosmics,
@@ -399,6 +474,10 @@ class LightCurve:
     )
     from ..lightcurve_detrending import (
         gp_detrend,
+        mcmc_detrend,
+        mcmc_detrend_each_night,
+        lsq_detrend,
+        lsq_detrend_each_night,
     )
     from ..transit_detecting import (
         find_transits,
