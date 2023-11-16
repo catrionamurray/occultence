@@ -84,9 +84,13 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
         maximum_period = min(30, max(self.time) - min(self.time))
 
     periods = np.linspace(minimum_period, maximum_period, num=10000)
-    BLS_d = BoxLeastSquares(self.time.value, self.flux, dy=self.uncertainty)
+
+    nan_mask = ~np.isnan(self.flux)
+    BLS_d = BoxLeastSquares(self.time.value[nan_mask], self.flux[nan_mask], dy=self.uncertainty)
     pg_d = BLS_d.power(periods, transit_durations, objective=obj, oversample=oversample)
     pers, power_d, epoch_d, depth_d, durs = pg_d.period, pg_d.power, pg_d.transit_time, pg_d.depth, pg_d.duration
+
+    max_power = np.argmax(power_d)
 
     if verbose:
         print("Number of Periods Checked: ", len(pers))
@@ -94,8 +98,10 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
         print("Duration: ", durs[max_power])
         print("Depth: ", depth_d[max_power])
         print("Power: ", power_d[max_power])
-    max_power = np.argmax(power_d)
+
+
     sorted_ind_power = np.argsort(power_d)[::-1]
+
 
     if np.count_nonzero(np.isfinite(power_d)) > 0:
         if power_d[max_power] > minpower:

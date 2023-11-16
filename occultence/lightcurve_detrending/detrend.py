@@ -159,7 +159,8 @@ def mcmc_detrend_each_night(self, params, degree, **kw):
     return reconst
 
 def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma=3, running_mean_boxsize=0.04,
-               rotation_period=None, rotation_amp=None, plot=True, figsize=(12, 4), verbose=False, **kw):
+                        rotation_period=None, rotation_amp=None, plot=True, figsize=(12, 4), verbose=False, **kw):
+
     detrended_lightcurve = self._create_copy()
 
     if type(nsigma) == int:
@@ -178,7 +179,6 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
         if plot:
             plt.plot(x, y, '.', alpha=0.5, label='Before First Sigma-Clip')
 
-        3
 
         if plot:
             plt.plot(x, y, '.', alpha=0.5, label="After First Sigma-Clip")
@@ -229,3 +229,11 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
 
     detrended_lightcurve._set_name(detrended_lightcurve.name + "_gpdetrend")
     return detrended_lightcurve
+
+
+
+
+
+
+
+
