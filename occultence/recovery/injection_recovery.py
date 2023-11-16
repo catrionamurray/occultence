@@ -1,6 +1,8 @@
 from ..imports import *
 import time
 
+#changed nr of tested durations to 4(from 10): 0.01, 0.04, 0.07, 0.1
+
 def full_injection_recovery(self,
                             nfake=10,
                             pool=False,
@@ -15,7 +17,7 @@ def full_injection_recovery(self,
                             gp_kw = {'do_first_sigma_clip':True, 'do_second_sigma_clip':True,
                                      'running_mean_boxsize':0.08, 'nsigma':3, 'plot':False},
                             bls_kw = {"minimum_period":0.5, "maximum_period":10,
-                                      'transit_durations':np.linspace(0.01, 0.1, 10), 'plot':False},
+                                      'transit_durations':np.linspace(0.01, 0.1, 4), 'plot':False, 'verbose': False},
                             bls_bin=7.5 * u.minute,
                             recovery_kw = {'condition_on_epoch':1 * u.hour},
                             plot=False,
@@ -29,6 +31,7 @@ def full_injection_recovery(self,
                                                               minimum_period=minimum_period,
                                                               maximum_period=maximum_period,
                                                               ld=ld)
+
 
     bls_kw['verbose'] = verbose
     clean_lcs, gp_lcs, bls_lcs = [],[],[]
@@ -171,6 +174,23 @@ def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_ov
                     recovered = False
 
             if condition_on_epoch is not None:
+#                 #orig
+#                 #if abs((recovered_params['epoch'][transit] - injected_params['epoch'][planet]).to_value('jd')) > \
+#                 #        condition_on_epoch.to_value('d'):
+#                 #    recovered = False
+#                 #changed to
+
+#                 epoch_bls = recovered_params['epoch'][transit].to_value('jd')
+#                 epoch_injected = injected_params['epoch'][planet].to_value('d')
+
+#                 n_periods_to_bls_epoch = (epoch_bls-epoch_injected)//injected_params['period'][planet].to_value('d')
+
+#                 time_difference1 = abs(epoch_bls-epoch_injected-n_periods_to_bls_epoch*injected_params['period'][planet].to_value('d'))
+#                 time_difference2 = abs(epoch_bls-epoch_injected-(n_periods_to_bls_epoch+1)*injected_params['period'][planet].to_value('d'))
+#                 time_difference = min(time_difference1,time_difference2)
+
+#                 #print("time_difference",time_difference)
+#                 if time_difference > condition_on_epoch.to_value('d'):
                 closest_transit = find_nearest(all_epochs, recovered_params['epoch'][transit].to_value('d'))
                 # if abs((recovered_params['epoch'][transit] - injected_params['epoch'][planet]).to_value('d')) > \
                 #         condition_on_epoch.to_value('d'):
