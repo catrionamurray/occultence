@@ -13,8 +13,9 @@ def full_injection_recovery(self,
                             ld=[0.385, 0.304],
                             clean_kw = {'dust_removal':False, 'bad_weather_removal':True, 'cosmics_removal':True,
                                         'cosmic_boxsize':0.08,'cosmic_nsigma':3},
-                            gp_bin = 20 * u.minute,
-                            gp_kw = {'do_first_sigma_clip':True, 'do_second_sigma_clip':True,
+                            detrend_method = "gp",
+                            detrend_bin = 20 * u.minute,
+                            detrend_kw = {'do_first_sigma_clip':True, 'do_second_sigma_clip':True,
                                      'running_mean_boxsize':0.08, 'nsigma':3, 'plot':False},
                             bls_kw = {"minimum_period":0.5, "maximum_period":10,
                                       'transit_durations':np.linspace(0.01, 0.1, 4), 'plot':False, 'verbose': False},
@@ -34,30 +35,30 @@ def full_injection_recovery(self,
 
 
     bls_kw['verbose'] = verbose
-    clean_lcs, gp_lcs, bls_lcs = [],[],[]
+    clean_lcs, detrend_lcs, bls_lcs = [],[],[]
 
     for i, lc in enumerate(lcs_with_transits):
         if time_this_process:
             t0 = time.time()
 
         print(f"{i+1}/{len(lcs_with_transits)}...")
-        clean_targ, gp_targ, bls_targ, planets = self.single_injection_recovery(lc, planets, i, clean_kw, gp_bin,
-                                                                                gp_kw, bls_kw, bls_bin, recovery_kw,
-                                                                                plot, verbose)
+        clean_targ, detrend_targ, bls_targ, planets = self.single_injection_recovery(lc=lc, planets=planets, i=i,
+                                                                                     clean_kw=clean_kw, detrend_method=detrend_method,
+                                                                                     detrend_bin=detrend_bin, detrend_kw=detrend_kw,
+                                                                                     bls_kw=bls_kw, bls_bin=bls_bin,
+                                                                                     recovery_kw=recovery_kw, plot=plot,
+                                                                                     verbose=verbose)
         if time_this_process:
             t1 = time.time()
-            total = t1 - t0
             print(f"Time: {total}")
         clean_lcs.append(clean_targ)
-        gp_lcs.append(gp_targ)
+        detrend_lcs.append(detrend_targ)
         bls_lcs.append(bls_targ)
 
-    return lcs_with_transits, clean_lcs, gp_lcs, bls_lcs, planets
+    return lcs_with_transits, clean_lcs, detrend_lcs, bls_lcs, planets
 
-def single_injection_recovery(self, lc, planets, i, clean_kw, detrend_bin, detrend_kw, bls_kw, bls_bin,recovery_kw,
-                              detrend_method="gp",
-                              plot=False,
-                              verbose=False,):
+def single_injection_recovery(self, lc, planets, i, clean_kw, detrend_bin, detrend_kw, bls_kw, bls_bin, recovery_kw,
+                              detrend_method, plot=False, verbose=False,):
 
     if plot:
         ax = self.plot(color='C0', label='raw data')

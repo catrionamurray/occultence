@@ -1,4 +1,4 @@
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 
 
 def version():
@@ -7,3 +7,4 @@ def version():
 
 # v0.2.1 - added the ability to mask existing transits in the timeseries
 # v0.2.2 - added split_time
+# v0.3.0 - added mcmc and lsq
