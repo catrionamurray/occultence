@@ -46,7 +46,7 @@ def pytransit_model(time,
 
 def inject_transit(self, per, epoch, inc, rp, ld, M=None, R=None, i=None):
     """
-
+    Inject simulated transit into LightCurve
     :param self:
     :param per:
     :param epoch:

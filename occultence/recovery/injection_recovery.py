@@ -54,34 +54,54 @@ def full_injection_recovery(self,
 
     return lcs_with_transits, clean_lcs, gp_lcs, bls_lcs, planets
 
-def single_injection_recovery(self, lc, planets, i, clean_kw, gp_bin, gp_kw, bls_kw, bls_bin, recovery_kw,plot=False,
+def single_injection_recovery(self, lc, planets, i, clean_kw, detrend_bin, detrend_kw, bls_kw, bls_bin,recovery_kw,
+                              detrend_method="gp",
+                              plot=False,
                               verbose=False,):
 
     if plot:
         ax = self.plot(color='C0', label='raw data')
         lc.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label='injected transit')
         plt.show()
+
     # clean
     clean_targ = lc.clean(**clean_kw)
-    # bin 20 mins for the GP
-    bin_targ = clean_targ.bin(dt=gp_bin)
-    # gp detrend
-    gp_targ = bin_targ.gp_detrend(**gp_kw)
 
-    # we can also predict the GP for 7.5 min binning and use that for the BLS
-    bin_targ = clean_targ.bin(dt=bls_bin)
-    gp_model = 1 + \
-               gp_targ.metadata['gp'].predict(y=gp_targ.metadata['data_to_condition_gp'], t=bin_targ.time.value)[0]
-    gp_smaller_binning = bin_targ._create_copy()
-    gp_smaller_binning.timelike['flux'] = gp_smaller_binning.timelike['flux'] / gp_model
+    if detrend_bin is not None:
+        # bin before detrending
+        bin_targ = clean_targ.bin(dt=detrend_bin)
+    else:
+        bin_targ = clean_targ
+
+    # detrend the light curve
+    if detrend_method == "gp":
+        # gp detrend
+        gp_targ = bin_targ.gp_detrend(**detrend_kw)
+
+        # we can also predict the GP for 7.5 min binning and use that for the BLS
+        bin_targ = clean_targ.bin(dt=bls_bin)
+        gp_model = 1 + \
+                   gp_targ.metadata['gp'].predict(y=gp_targ.metadata['data_to_condition_gp'], t=bin_targ.time.value)[0]
+        detrended_targ = bin_targ._create_copy()
+        detrended_targ.timelike['flux'] = detrended_targ.timelike['flux'] / gp_model
+
+    elif detrend_method == "lsq":
+        detrended_targ = bin_targ.lsq_detrend_each_night(**detrend_kw)
+
+    elif detrend_method == "mcmc":
+        detrended_targ = bin_targ.mcmc_detrend_each_night(**detrend_kw)
+    else:
+        print(f"{detrend_method} is not recognised. Please choose one of: 'gp', 'lsq' or 'mcmc'")
+        return None, None, None, None
+
 
     if plot:
         ax = bin_targ.plot(color='C0', label='clean lc')
-        gp_smaller_binning.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label='GP-detrended')
+        detrended_targ.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label=f'{detrend_method}-detrended')
         plt.show()
 
     # search for transit
-    removed_nans = gp_smaller_binning.remove_nans()
+    removed_nans = detrended_targ.remove_nans()
     bls_targs = removed_nans.find_transits(**bls_kw)
 
     if len(bls_targs) == 0:
