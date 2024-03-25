@@ -83,6 +83,7 @@ setup(
         "celerite",
         "pytransit",
         "emcee",
+        "corner",
         "tqdm",
         "arviz",
     ],
