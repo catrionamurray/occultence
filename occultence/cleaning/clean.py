@@ -74,7 +74,7 @@ def clean(self,
                 self.mask_bad_weather(bad_weather_boxsize, bad_weather_threshvalue)
             else:
                 # If there is no artifical lightcurve stored we cannot check for bad weather!
-                warnings.warn(f""" The LightCurve's timelike dictionary does not appear to have the 'artifical_lightcurve' in it.
+                cheerfully_suggest(f""" The LightCurve's timelike dictionary does not appear to have the 'artifical_lightcurve' in it.
                  This array is necessary to calculate bad weather, therefore this will ** not ** be applied!""")
 
     ### Thresholds ###

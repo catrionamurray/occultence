@@ -25,7 +25,7 @@ import warnings, textwrap
 
 # copied from chromatic (credit Zach Berta-Thompson):
 def custom_formatwarning(message, *args, **kwargs):
-    return f"🌈🤖 {textwrap.dedent(str(message)).strip().strip()}\n\n"
+    return f"🤖⚠ {textwrap.dedent(str(message)).strip().strip()} ⚠🤖\n\n"
 
 original_warning_format = warnings.formatwarning
 def cheerfully_suggest(*args, **kwargs):

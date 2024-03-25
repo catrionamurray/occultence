@@ -14,25 +14,28 @@ def mask_existing_transit(self, period, t0, duration, buffer=1 * u.hour):
     :param buffer: Buffer to mask either side of planet ingress/egress [time]
     :return:
     """
+    self_copy = self._create_copy()
 
     i = 1
-    if f"transit_{i}" not in self.masks:
-        self.masks[f'transit_{i}'] = np.zeros(self.ntime)
+
+    if f"transit_{i}" not in self_copy.masks:
+        self_copy.masks[f'transit_{i}'] = np.zeros(self_copy.ntime)
     else:
-        while f"transit_{i}" in self.masks:
+        while f"transit_{i}" in self_copy.masks:
             i += 1
 
-        self.masks[f'transit_{i}'] = np.zeros(self.ntime)
+        self_copy.masks[f'transit_{i}'] = np.zeros(self_copy.ntime)
 
-    num_transits_since_t0 = int((self.time[0].value * u.d - t0)/period)
+    num_transits_since_t0 = int((self_copy.time[0].value * u.d - t0)/period)
 
     transit_t = t0 + (num_transits_since_t0 * period)
 
-    while transit_t < self.time[-1].value * u.d:
-        self.masks[f'transit_{i}'][(self.time.value * u.d > transit_t-(0.5*duration)-buffer) & \
-                                   (self.time.value * u.d < transit_t+(0.5*duration)+buffer)] = 1
+    while transit_t < self_copy.time[-1].value * u.d:
+        self_copy.masks[f'transit_{i}'][(self_copy.time.value * u.d > transit_t-(0.5*duration)-buffer) & \
+                                   (self_copy.time.value * u.d < transit_t+(0.5*duration)+buffer)] = 1
         transit_t += period
 
+    return self_copy
 
 def model_existing_transit(self, period, t0, rp, rs, ms, ldc, inc):
     """

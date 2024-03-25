@@ -2,11 +2,11 @@ from ..imports import *
 from matplotlib.patches import Patch
 
 def twod_plot(x, y, z, x_bins, y_bins, zlabel, statistic, vlims=[], nsig='%0.2f', ylog=False, xlog=False, smooth=False,
-              addtext=False, svname=""):
+              figsize = (10,8), addtext=False, svname=""):
     # cmap = plt.get_cmap("Blues")
     cmap = plt.get_cmap("viridis")
     # fig, (ax2) = plt.subplots(1, 1, figsize=set_size(width, fraction=1.2, ratio=0.8))
-    fig, (ax2) = plt.subplots(1, 1, figsize=set_size(width, fraction=1.7, ratio=0.5))
+    fig, (ax2) = plt.subplots(1, 1, figsize=figsize)
     fig.canvas.draw()
     ret = binned_statistic_2d(x, y, z * 100, statistic=statistic, bins=[x_bins, y_bins])
     ret2 = binned_statistic_2d(x, y, z * 100, statistic="count", bins=[x_bins, y_bins])
@@ -42,8 +42,8 @@ def twod_plot(x, y, z, x_bins, y_bins, zlabel, statistic, vlims=[], nsig='%0.2f'
 
                         # txt.set_path_effects([PathEffects.withSimplePatchShadow(linewidth=4, foreground='w')])
         # plt.plot(1.51087, 1.144, marker='x', color='k', label="TRAPPIST-1b")
-        plt.plot(2.7299024, 1.320, marker='*', color='r', markersize=10, label="SPECULOOS-2b")
-        plt.plot(8.457463, 1.366, marker='*', color='#07b2e6', markersize=10, label="SPECULOOS-2c")
+        # plt.plot(2.7299024, 1.320, marker='*', color='r', markersize=10, label="SPECULOOS-2b")
+        # plt.plot(8.457463, 1.366, marker='*', color='#07b2e6', markersize=10, label="SPECULOOS-2c")
         if xlog:
             plt.xscale('log')
         if ylog:

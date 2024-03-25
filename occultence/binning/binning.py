@@ -5,18 +5,19 @@ def bin(self, dt, bin_func=np.nanmedian, **kw):
     # bin_ts = aggregate_downsample(ts, time_bin_size=dt, aggregate_func=bin_func, **kw)
     # replaced the above line with
     # begin replaced
-    time_values = self.timelike["time"].value
+    # time_values = self.timelike["time"].value
 
-    cuts = np.where(time_values[1:] - time_values[:-1] > 0.5)[0]
-    cuts = np.hstack((0, cuts + 1, len(time_values)))
+    # cuts = np.where(time_values[1:] - time_values[:-1] > 0.5)[0]
+    cuts, _ = self.split_time(split=self.split_by)
+    # cuts = np.hstack((0, cuts + 1, len(time_values)))
 
     for i in range(len(cuts) - 1):
         t1 = self.timelike.copy()
-
         for key in t1.keys():
             t1[key] = self.timelike[key][cuts[i]:cuts[i + 1]]
 
         t1s = TimeSeries(t1)
+        # t1s = TimeSeries(cut_times[i].value)
 
         bin_ts1 = aggregate_downsample(t1s, time_bin_size=dt, aggregate_func=bin_func, **kw)
 
@@ -24,14 +25,6 @@ def bin(self, dt, bin_func=np.nanmedian, **kw):
             bin_ts = bin_ts1.copy()
         else:
             bin_ts = astropy.table.vstack([bin_ts, bin_ts1])
-
-            """for j in range(len(bin_ts1["time_bin_start"].value)):
-                bin_ts.add_row({'time_bin_start': bin_ts1["time_bin_start"][j],
-                     'time_bin_size': bin_ts1["time_bin_size"][j],
-                     'flux': bin_ts1["flux"][j],
-                     'uncertainty':bin_ts1["uncertainty"][j],
-                     'original_time_index': bin_ts1["original_time_index"][j]})"""
-
 
     binned_lc = self._create_copy()
     binned_lc.timelike = {}

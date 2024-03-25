@@ -80,7 +80,7 @@ setup(
         "pandas",
         "fitsio",
         "george",
-        # "celerite",
+        "celerite",
         "pytransit",
         "tqdm",
         "arviz",
