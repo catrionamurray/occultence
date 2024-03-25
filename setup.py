@@ -82,7 +82,7 @@ setup(
         "george",
         "celerite",
         "pytransit",
-        "sklearn",
+        "scikit-learn",
         "emcee",
         "corner",
         "tqdm",
