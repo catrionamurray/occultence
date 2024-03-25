@@ -82,6 +82,7 @@ setup(
         "george",
         "celerite",
         "pytransit",
+        "sklearn",
         "emcee",
         "corner",
         "tqdm",
