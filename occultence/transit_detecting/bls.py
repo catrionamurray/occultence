@@ -86,7 +86,7 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
     periods = np.linspace(minimum_period, maximum_period, num=10000)
 
     nan_mask = ~np.isnan(self.flux)
-    BLS_d = BoxLeastSquares(self.time.value[nan_mask], self.flux[nan_mask], dy=self.uncertainty)
+    BLS_d = BoxLeastSquares(self.time.value[nan_mask], self.flux[nan_mask], dy=self.uncertainty[nan_mask])
     pg_d = BLS_d.power(periods, transit_durations, objective=obj, oversample=oversample)
     pers, power_d, epoch_d, depth_d, durs = pg_d.period, pg_d.power, pg_d.transit_time, pg_d.depth, pg_d.duration
 
