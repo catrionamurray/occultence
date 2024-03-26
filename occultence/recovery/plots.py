@@ -1,12 +1,13 @@
 from ..imports import *
 from matplotlib.patches import Patch
 from scipy.stats import binned_statistic_2d
+from matplotlib import patheffects as PathEffects
 
 def twod_plot(x, y, z, x_bins, y_bins, zlabel, statistic, vlims=[], nsig='%0.2f', ylog=False, xlog=False, smooth=False,
               figsize = (10,8), addtext=False, svname=""):
 
-    # cmap = plt.get_cmap("Blues")
-    cmap = plt.get_cmap("viridis")
+    cmap = plt.get_cmap("Blues")
+    # cmap = plt.get_cmap("viridis")
     # fig, (ax2) = plt.subplots(1, 1, figsize=set_size(width, fraction=1.2, ratio=0.8))
     fig, (ax2) = plt.subplots(1, 1, figsize=figsize)
     fig.canvas.draw()
