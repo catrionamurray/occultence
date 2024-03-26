@@ -3,6 +3,9 @@ from matplotlib.patches import Patch
 
 def twod_plot(x, y, z, x_bins, y_bins, zlabel, statistic, vlims=[], nsig='%0.2f', ylog=False, xlog=False, smooth=False,
               figsize = (10,8), addtext=False, svname=""):
+
+    from scipy.stats import binned_statistic_2d
+
     # cmap = plt.get_cmap("Blues")
     cmap = plt.get_cmap("viridis")
     # fig, (ax2) = plt.subplots(1, 1, figsize=set_size(width, fraction=1.2, ratio=0.8))
