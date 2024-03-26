@@ -39,26 +39,30 @@ def full_injection_recovery(self,
     clean_lcs, detrend_lcs, bls_lcs = [],[],[]
 
     for i, lc in enumerate(lcs_with_transits):
-        if time_this_process:
-            t0 = time.time()
+        try:
+            if time_this_process:
+                t0 = time.time()
 
-        print(f"{i+1}/{len(lcs_with_transits)}...")
-        planets = pd.read_csv(svname)
-        planets.loc[i, 'injected'] = 1.0
-        planets.loc[i, 'observed'] = int(lc.was_planet_observed())
-        clean_targ, detrend_targ, bls_targ, planets = self.single_injection_recovery(lc=lc, planets=planets, i=i,
-                                                                                     clean_kw=clean_kw, detrend_method=detrend_method,
-                                                                                     detrend_bin=detrend_bin, detrend_kw=detrend_kw,
-                                                                                     bls_kw=bls_kw, bls_bin=bls_bin,
-                                                                                     recovery_kw=recovery_kw, plot=plot,
-                                                                                     verbose=verbose)
-        planets.to_csv(svname, index=False)
-        if time_this_process:
-            t1 = time.time()
-            print(f"Time to inject-recover: {t1-t0}")
-        clean_lcs.append(clean_targ)
-        detrend_lcs.append(detrend_targ)
-        bls_lcs.append(bls_targ)
+            print(f"{i+1}/{len(lcs_with_transits)}...")
+            planets = pd.read_csv(svname)
+            planets.loc[i, 'injected'] = 1.0
+            planets.loc[i, 'observed'] = int(lc.was_planet_observed())
+            clean_targ, detrend_targ, bls_targ, planets = self.single_injection_recovery(lc=lc, planets=planets, i=i,
+                                                                                         clean_kw=clean_kw, detrend_method=detrend_method,
+                                                                                         detrend_bin=detrend_bin, detrend_kw=detrend_kw,
+                                                                                         bls_kw=bls_kw, bls_bin=bls_bin,
+                                                                                         recovery_kw=recovery_kw, plot=plot,
+                                                                                         verbose=verbose)
+            planets.to_csv(svname, index=False)
+            if time_this_process:
+                t1 = time.time()
+                print(f"Time to inject-recover: {t1-t0}")
+            clean_lcs.append(clean_targ)
+            detrend_lcs.append(detrend_targ)
+            bls_lcs.append(bls_targ)
+        except Exception as e:
+            print(e)
+
 
     # print summary
     print(f"Planets recovered: {100 * len(planets.loc[planets['recovered'] == 1.0]) / len(planets['recovered'])}%")
