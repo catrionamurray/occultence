@@ -235,6 +235,105 @@ def single_clean_detrend(self, lc, clean_kw, detrend_bin, detrend_kw, detrend_me
 
     return clean_targ, detrended_targ
 
+def single_clean_bin(self, lc, clean_kw, detrend_bin, time_this_process=False, plot=False, verbose=False):
+    if plot:
+        ax = self.plot(color='C0', label='raw data')
+        lc.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label='injected transit')
+        plt.show()
+
+    # *** clean *****************
+    if time_this_process:
+        t0 = time.time()
+    clean_targ = lc.clean(**clean_kw)
+    if time_this_process:
+        t1 = time.time()
+        print(f"Time to clean LC: {t1 - t0}")
+    # ****************************
+
+    # ***  bin  *****************
+    if detrend_bin is not None:
+        # bin before detrending
+        bin_targ = clean_targ.bin(dt=detrend_bin)
+    else:
+        bin_targ = clean_targ
+    # ****************************
+
+    return clean_targ, bin_targ
+
+def single_predetrend(self, bls_kw, time_this_process=False, predetrend_bls=True, plot=False, verbose=False):
+    # *** pre-detrend BLS ********
+    if time_this_process:
+        t0 = time.time()
+    if predetrend_bls:
+        # do an initial search for transits to mask during detrending
+        bin_targ = self._create_copy()
+        removed_nans = bin_targ.remove_nans()
+        bls_targs = removed_nans.find_transits(**bls_kw)
+        if len(bls_targs) > 0:
+            in_transit = bls_targs[0].metadata['BLS_transits_ind']
+            bls_targs[0].masks['transit'] = np.zeros(bls_targs[0].ntime)
+            bls_targs[0].masks['transit'][in_transit] = 1.0
+            init_transits_masked = bls_targs[0].clean(zero_flux_removal=False, nan_flux_removal=False,
+                                                      bad_weather_removal=False, threshold_removal=False,
+                                                      dust_removal=False, cosmics_removal=False)
+            bin_targ = init_transits_masked
+    if time_this_process:
+        t1 = time.time()
+        print(f"Time to BLS before detrending: {t1 - t0}")
+    # ****************************
+    return bin_targ
+def single_detrend(self, clean_targ, orig_bin_targ, detrend_kw, detrend_method, bls_bin,
+                         time_this_process=False, predetrend_bls=True, plot=False, verbose=False):
+
+    # ***  detrend  **************
+    if time_this_process:
+        t0 = time.time()
+
+    if detrend_method == "gp":
+        # gp detrend
+        gp_targ = self.gp_detrend(**detrend_kw)
+
+        # we can also predict the GP for 7.5 min binning and use that for the BLS
+        bin_targ = clean_targ.bin(dt=bls_bin)
+        gp_model = 1 + \
+                   gp_targ.metadata['gp'].predict(y=gp_targ.metadata['data_to_condition_gp'], t=bin_targ.time.value)[0]
+        detrended_targ = bin_targ._create_copy()
+        detrended_targ.timelike['flux'] = detrended_targ.timelike['flux'] / gp_model
+
+    elif detrend_method == "lsq":
+        detrended_targ = self.lsq_detrend_each_night(**detrend_kw)
+        detrended_targ = detrended_targ.bin(dt=bls_bin)
+
+    elif detrend_method == "mcmc":
+        detrended_targ = self.mcmc_detrend_each_night(**detrend_kw)
+        detrended_targ = detrended_targ.bin(dt=bls_bin)
+
+    elif detrend_method == "ridge":
+        if predetrend_bls:
+            detrended_targ = self.lsq_ridge_detrend_each_night(orig_lc=orig_bin_targ, **detrend_kw)
+        else:
+            detrended_targ = self.lsq_ridge_detrend_each_night(**detrend_kw)
+        detrended_targ = detrended_targ.bin(dt=bls_bin)
+    elif detrend_method == None:
+        print("No detrending method selected!")
+        detrended_targ = clean_targ._create_copy().bin(dt=bls_bin)
+    else:
+        print(f"{detrend_method} is not recognised. Please choose one of: 'gp', 'lsq', 'ridge' or 'mcmc'")
+        return None, None, None, None
+
+    if time_this_process:
+        t1 = time.time()
+        print(f"Time to detrend: {t1 - t0}")
+
+    if plot:
+        ax = self.plot(color='C0', label='clean lc')
+        detrended_targ.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label=f'{detrend_method}-detrended')
+        plt.show()
+
+    # ****************************
+
+    return detrended_targ
+
 def single_bls(i, detrended_targ, bls_kw, recovery_kw, planets, time_this_process=False, verbose=False):
     # search for transit
     if time_this_process:
@@ -285,3 +384,9 @@ def single_bls(i, detrended_targ, bls_kw, recovery_kw, planets, time_this_proces
                 print("No transit found!\n")
 
     return bls_targs, planets
+
+def find_transits_wrapper(lc, dict_args):
+    return lc.find_transits(**dict_args)
+
+# def single_predetrend_wrapper(lc, dict_args):
+#     return lc.single_predetrend(**dict_args)

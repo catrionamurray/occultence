@@ -513,6 +513,9 @@ class LightCurve:
         single_clean_detrend,
         split_lightcurve,
         was_planet_observed,
+        single_detrend,
+        single_predetrend,
+        single_clean_bin,
     )
 
     # from ..flare_finding import *
