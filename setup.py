@@ -81,7 +81,7 @@ setup(
         "fitsio",
         "george",
         "celerite",
-        "pytransit==2.5.20",
+        "pytransit==2.5.24",
         "scikit-learn",
         "emcee",
         "corner",

@@ -318,7 +318,7 @@ def create_lots_of_transit_params(self, nfake=1000, R_star=None, M_star=None, T_
 def inject_lots_of_transits(self, nfake=1000, R_star=None, M_star=None, T_eff=None, SpT=None, ld = [0.385, 0.304],
                             minimum_planet_radius=0.5 * u.R_earth, maximum_planet_radius=3 * u.R_earth,
                             minimum_period=0.5 * u.d, maximum_period=30 * u.d, store_planets=True, fname=None,
-                            pool=True, ncores=1, **kw):
+                            pool=False, ncores=1, **kw):
 
     planets = self.create_lots_of_transit_params(nfake=nfake, R_star=R_star, M_star=M_star, T_eff=T_eff, SpT=SpT,
                                minimum_planet_radius=minimum_planet_radius, maximum_planet_radius=maximum_planet_radius,
