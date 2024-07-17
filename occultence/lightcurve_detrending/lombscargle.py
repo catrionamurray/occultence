@@ -1,7 +1,9 @@
 from ..imports import *
 from astropy.timeseries import LombScargle
+from scipy.stats import norm
 
-def lombscargle(self, plot=False, npeaks=3, minimum_frequency = 0.03/u.d, maximum_frequency = 12/u.d, nsigma=2, **ls_kw):
+def lombscargle(self, plot=False, npeaks=3, minimum_frequency = 0.03/u.d, maximum_frequency = 12/u.d, nsigma=2,
+                ylims=[0.99, 1.01], **ls_kw):
     # minimum_frequency = 0.03  # P = 33.3d
     # maximum_frequency = 12  # P = 0.8333d = 2hrs
 
@@ -20,26 +22,43 @@ def lombscargle(self, plot=False, npeaks=3, minimum_frequency = 0.03/u.d, maximu
         for i, p in enumerate(highest_peaks[:npeaks]):
             period = (1 / frequency[p])
             plt.axvline(period.to_value('d'), color=f"C{i}", label=f"{i + 1} Most-Likely Period = {period:.2f}")
-        two_sigma = 1 - 0.9544
-        three_sigma = 1 - 0.9973
-        probability = {2:two_sigma, 3:three_sigma}
+        probability = 1-(norm.cdf(nsigma) - norm.cdf(-nsigma))
 
-        fap = ls.false_alarm_level(probability[nsigma])
+        fap = ls.false_alarm_level(probability)
         plt.axhline(fap,color='r', linestyle='--', label=f"False Alarm Probability of {nsigma}$\sigma$")
         plt.legend()
 
 
-        fig, ax = plt.subplots(nrows=npeaks, sharex=True, sharey=True)
+        fig, ax = plt.subplots(figsize=(6, 4*npeaks), nrows=npeaks, ncols=2, sharex='col', sharey=True, width_ratios=[2,1])
         t_fit = np.linspace(self.time[0], self.time[-1], 1000)
         for peak in range(npeaks):
             y_fit = ls.model(t_fit, frequency[highest_peaks[peak]])
             if npeaks>1:
-                plt.sca(ax[peak])
+                plt.sca(ax[peak, 0])
+            else:
+                plt.sca(ax[0])
             plt.plot(self.time.value, self.flux, 'k.')
             plt.plot(t_fit.value, y_fit)
-            plt.ylim(0.98, 1.02)
+            plt.ylim(ylims[0], ylims[1])
             plt.title(f"{peak+1} Most Likely P={(1 / frequency[highest_peaks[peak]]):.2f}d")
+
+            if npeaks>1:
+                plt.sca(ax[peak, 1])
+            else:
+                plt.sca(ax[1])
+
+            ph = phase(t=self.time.value, period=(1 / frequency[highest_peaks[peak]]).value)
+            ph_fit = phase(t=t_fit.value, period=(1 / frequency[highest_peaks[peak]]).value)
+            plt.plot(ph, self.flux, 'k.')
+            # plt.plot(ph_fit, y_fit, '.')
+            plt.title(f"Phase-Folded")
+
         plt.tight_layout()
 
 
     return ls, 1/frequency[highest_peaks], power[highest_peaks]
+
+def phase(t, period):
+    ph_d = ((t - np.min(t)) % period) / period
+    ph_d[ph_d > 0.5] -= 1
+    return ph_d
