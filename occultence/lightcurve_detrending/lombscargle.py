@@ -11,7 +11,7 @@ def lombscargle(self, plot=False, npeaks=3, minimum_frequency = 0.03/u.d, maximu
     frequency, power = ls.autopower(minimum_frequency=minimum_frequency,
                                     maximum_frequency=maximum_frequency,
                                     **ls_kw)
-    # period = 1 / frequency[np.argmax(power)]
+    periods = 1 / frequency
     highest_peaks = np.argsort(power)[::-1]
 
 
@@ -20,7 +20,7 @@ def lombscargle(self, plot=False, npeaks=3, minimum_frequency = 0.03/u.d, maximu
         plt.ylabel("LS Power")
         plt.xlabel("Period [d]")
         for i, p in enumerate(highest_peaks[:npeaks]):
-            period = (1 / frequency[p])
+            period = periods[p]
             plt.axvline(period.to_value('d'), color=f"C{i}", label=f"{i + 1} Most-Likely Period = {period:.2f}")
         probability = 1-(norm.cdf(nsigma) - norm.cdf(-nsigma))
 
@@ -40,15 +40,16 @@ def lombscargle(self, plot=False, npeaks=3, minimum_frequency = 0.03/u.d, maximu
             plt.plot(self.time.value, self.flux, 'k.')
             plt.plot(t_fit.value, y_fit)
             plt.ylim(ylims[0], ylims[1])
-            plt.title(f"{peak+1} Most Likely P={(1 / frequency[highest_peaks[peak]]):.2f}d")
+            plt.title(f"{peak+1} Most Likely P={periods[highest_peaks[peak]]:.2f}d")
+            plt.ylabel("Relative Flux")
 
             if npeaks>1:
                 plt.sca(ax[peak, 1])
             else:
                 plt.sca(ax[1])
 
-            ph = phase(t=self.time.value, period=(1 / frequency[highest_peaks[peak]]).value)
-            ph_fit = phase(t=t_fit.value, period=(1 / frequency[highest_peaks[peak]]).value)
+            ph = phase(t=self.time.value, period=periods[highest_peaks[peak]].value)
+            ph_fit = phase(t=t_fit.value, period=periods[highest_peaks[peak]].value)
             plt.plot(ph, self.flux, 'k.')
             # plt.plot(ph_fit, y_fit, '.')
             plt.title(f"Phase-Folded")
@@ -56,7 +57,7 @@ def lombscargle(self, plot=False, npeaks=3, minimum_frequency = 0.03/u.d, maximu
         plt.tight_layout()
 
 
-    return ls, 1/frequency[highest_peaks], power[highest_peaks]
+    return ls, periods[highest_peaks], power[highest_peaks]
 
 def phase(t, period):
     ph_d = ((t - np.min(t)) % period) / period
