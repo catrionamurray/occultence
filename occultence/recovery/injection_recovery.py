@@ -61,34 +61,31 @@ def full_injection_recovery(self,
             #                        **poolkw)
 
             for i, lc in enumerate(lcs_with_transits):
-                try:
-                    planets.loc[i, 'injected'] = 1.0
-                    planets.loc[i, 'observed'] = int(lc.was_planet_observed())
+                planets.loc[i, 'injected'] = 1.0
+                planets.loc[i, 'observed'] = int(lc.was_planet_observed())
 
-                    clean_targ, bin_targ = self.single_clean_bin(lc, clean_kw, detrend_bin)
-                    removed_nans = bin_targ.remove_nans()
-                    bin_lcs.append(removed_nans)
-                    clean_lcs.append(clean_targ)
-                except Exception as e:
-                    print(e)
+                clean_targ, bin_targ = self.single_clean_bin(lc, clean_kw, detrend_bin)
+                removed_nans = bin_targ.remove_nans()
+                bin_lcs.append(removed_nans)
+                clean_lcs.append(clean_targ)
 
-        # pool the pre-detrend BLS
-        pool = Pool(ncores)
-        bin_lcs_pre = pool.starmap(sir.single_predetrend, [(lc, bls_kw) for lc in bin_lcs])
+            # pool the pre-detrend BLS
+            pool = Pool(ncores)
+            bin_lcs_pre = pool.starmap(sir.single_predetrend, [(lc, bls_kw) for lc in bin_lcs])
 
-        # for now I cannot pool the GP-detrending - I believe it's an issue with NaNs
-        for bin_lc, clean_lc, orig_bin_lc in zip(bin_lcs_pre, clean_lcs, bin_lcs):
-            detrend_lc = bin_lc.single_detrend(clean_targ=clean_lc, orig_bin_targ=orig_bin_lc, detrend_kw=detrend_kw,
-                                        detrend_method=detrend_method, bls_bin=bls_bin, )
-            detrend_lcs.append(detrend_lc)
+            # for now I cannot pool the GP-detrending - I believe it's an issue with george or NaNs
+            for bin_lc, clean_lc, orig_bin_lc in zip(bin_lcs_pre, clean_lcs, bin_lcs):
+                detrend_lc = bin_lc.single_detrend(clean_targ=clean_lc, orig_bin_targ=orig_bin_lc, detrend_kw=detrend_kw,
+                                            detrend_method=detrend_method, bls_bin=bls_bin, )
+                detrend_lcs.append(detrend_lc)
 
-        # pool the post-detrend BLS
-        pool = Pool(ncores)
-        results = pool.starmap(sir.single_bls, [(i, lc, bls_kw, recovery_kw, planets,
-                                                 time_this_process, verbose) for i, lc in enumerate(detrend_lcs)])
+            # pool the post-detrend BLS
+            pool = Pool(ncores)
+            results = pool.starmap(sir.single_bls, [(i, lc, bls_kw, recovery_kw, planets,
+                                                     time_this_process, verbose) for i, lc in enumerate(detrend_lcs)])
 
-        bls_lcs = [r[0] for r in results]
-        planets_list = [r[1] for r in results]
+            bls_lcs = [r[0] for r in results]
+            planets_list = [r[1] for r in results]
 
         for i, p in enumerate(planets_list):
             planets.loc[i] = p.iloc[i]
@@ -129,8 +126,8 @@ def full_injection_recovery(self,
     print(f"Planets recovered: {100 * len(planets.loc[planets['recovered'] == 1.0]) / len(planets['recovered'])}%")
     print("But not all of those planets transited during the observation window...")
     if len(planets['recovered'][planets['observed'] == 1.0]) > 0:
-        print(f"""Observed Planets recovered: {100 * len(planets.loc[(planets['recovered'] == 1.0) &
-                (planets['observed'] == 1.0)]) / len(planets['recovered'][planets['observed'] == 1.0])}%""")
+        print(f"""Observed Planets recovered: {(100 * len(planets.loc[(planets['recovered'] == 1.0) &
+                (planets['observed'] == 1.0)]) / len(planets['recovered'][planets['observed'] == 1.0])):.1f}%""")
     else:
         print("None of the planets injected were observed!")
 
