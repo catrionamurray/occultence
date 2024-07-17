@@ -1,4 +1,4 @@
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 
 def version():
@@ -10,3 +10,4 @@ def version():
 # v0.3.0 - added mcmc and lsq
 # v0.3.2 - added celerite and emcee and corner as requirements
 # v0.4.0 - fixed multiprocessing pooling
+# v0.5.0 - added rotation + flare capabilities

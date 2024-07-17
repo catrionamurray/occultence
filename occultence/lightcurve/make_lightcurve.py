@@ -494,6 +494,7 @@ class LightCurve:
         lsq_detrend_each_night,
         lsq_ridge_detrend,
         lsq_ridge_detrend_each_night,
+        lombscargle,
     )
     from ..transit_detecting import (
         find_transits,
