@@ -2,6 +2,19 @@ from ..imports import *
 from astropy.timeseries import LombScargle
 from scipy.stats import norm
 
+def lombscargle_detrend(self, ls_binning=30*u.minute, **ls_kw):
+    binned_lc = self.bin(dt=ls_binning)
+    detrended_lightcurve = self._create_copy()
+
+    ls, periods, power = binned_lc.lombscargle(**ls_kw)
+    model = ls.model(self.time, 1/periods[0])
+
+    detrended_lightcurve.timelike['ls_model'] = model
+    detrended_lightcurve.timelike['original_flux'] = detrended_lightcurve.timelike['flux'] * 1
+    detrended_lightcurve.timelike['flux'] = detrended_lightcurve.timelike['flux'] / model
+    detrended_lightcurve._set_name(detrended_lightcurve.name + "_lsdetrend")
+    return detrended_lightcurve
+
 def lombscargle(self, plot=False, npeaks=3, minimum_frequency = 0.03/u.d, maximum_frequency = 12/u.d, nsigma=2,
                 ylims=[0.99, 1.01], **ls_kw):
     # minimum_frequency = 0.03  # P = 33.3d

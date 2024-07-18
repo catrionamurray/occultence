@@ -495,6 +495,7 @@ class LightCurve:
         lsq_ridge_detrend,
         lsq_ridge_detrend_each_night,
         lombscargle,
+        lombscargle_detrend,
     )
     from ..transit_detecting import (
         find_transits,
@@ -519,7 +520,9 @@ class LightCurve:
         single_clean_bin,
     )
 
-    # from ..flare_finding import *
+    from ..flare_finding import (
+        inject_flares,
+    )
     # from ..read import *
     # from ..write import *
     # from recovery import *
