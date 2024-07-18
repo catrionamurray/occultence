@@ -1,5 +1,6 @@
 from ..imports import *
 
+
 def bin(self, dt, bin_func=np.nanmedian, **kw):
     # ts = TimeSeries(self.timelike)
     # bin_ts = aggregate_downsample(ts, time_bin_size=dt, aggregate_func=bin_func, **kw)
@@ -48,6 +49,7 @@ def bin(self, dt, bin_func=np.nanmedian, **kw):
     binned_lc._set_name(binned_lc.name + "_bin")
     return binned_lc
 
+
 def split_time(self, split=0.5 * u.d):
     t0 = self.time[0]
     prev_obs_night = 0
@@ -68,3 +70,9 @@ def split_time(self, split=0.5 * u.d):
 
     return obs_nights_indexes, obs_nights
 
+
+def extract(self, ind):
+    new_lc = self._create_copy()
+    for k, v in self.timelike.items():
+        new_lc.timelike[k] = v[ind]
+    return new_lc

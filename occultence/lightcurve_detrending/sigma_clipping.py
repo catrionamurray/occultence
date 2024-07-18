@@ -38,3 +38,15 @@ def second_sigma_clip(x,y, nsigma_upper, nsigma_lower, running_mean_boxsize):
         else:
             cm = cmasked
     return y
+
+def global_and_local_sigma_clip(self, global_sc_kw={'nsigma_upper':3, 'nsigma_lower':3},
+                                local_sc_kw={'nsigma_upper': 5, 'nsigma_lower': 5, 'running_mean_boxsize': 0.4}):
+
+    clipped_lc = self._create_copy()
+
+    y_clip_global = first_sigma_clip(self.flux, **global_sc_kw)
+    y_clip_local = second_sigma_clip(self.time.value, y_clip_global.copy(), **local_sc_kw)
+
+    clipped_lc.timelike['flux'] = y_clip_local
+    clipped_lc._set_name(clipped_lc.name + "_sigmaclipped")
+    return clipped_lc

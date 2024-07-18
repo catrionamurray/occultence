@@ -483,7 +483,8 @@ class LightCurve:
     )
     from ..binning import (
         bin,
-        split_time
+        split_time,
+        extract,
     )
     from ..lightcurve_detrending import (
         gp_detrend,
@@ -496,6 +497,7 @@ class LightCurve:
         lsq_ridge_detrend_each_night,
         lombscargle,
         lombscargle_detrend,
+        global_and_local_sigma_clip
     )
     from ..transit_detecting import (
         find_transits,
@@ -522,6 +524,7 @@ class LightCurve:
 
     from ..flare_finding import (
         inject_flares,
+        detect_flares_sclip,
     )
     # from ..read import *
     # from ..write import *

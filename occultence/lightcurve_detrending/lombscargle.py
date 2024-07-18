@@ -2,17 +2,27 @@ from ..imports import *
 from astropy.timeseries import LombScargle
 from scipy.stats import norm
 
-def lombscargle_detrend(self, ls_binning=30*u.minute, **ls_kw):
-    binned_lc = self.bin(dt=ls_binning)
+def lombscargle_detrend(self, ls_binning=30*u.minute, plot=False, **ls_kw):
+    binned_lc = self.bin(dt=ls_binning).remove_nans()
     detrended_lightcurve = self._create_copy()
 
-    ls, periods, power = binned_lc.lombscargle(**ls_kw)
+    ls, periods, power = binned_lc.lombscargle(plot=plot, **ls_kw)
     model = ls.model(self.time, 1/periods[0])
 
+    detrended_lightcurve.metamethods['ls_model'] = ls.model
+    detrended_lightcurve.metadata['ls_period'] = periods[0]
     detrended_lightcurve.timelike['ls_model'] = model
+    detrended_lightcurve.timelike['ls_model_function'] = model
     detrended_lightcurve.timelike['original_flux'] = detrended_lightcurve.timelike['flux'] * 1
     detrended_lightcurve.timelike['flux'] = detrended_lightcurve.timelike['flux'] / model
     detrended_lightcurve._set_name(detrended_lightcurve.name + "_lsdetrend")
+
+    if plot:
+        fig, ax = plt.subplots(figsize=(12, 6), nrows=2)
+        self.plot_all(ax=ax[0])
+        ax[0].plot(self.time.value, model, c='orange', zorder=10)
+        detrended_lightcurve.plot_all(ax=ax[1])
+
     return detrended_lightcurve
 
 def lombscargle(self, plot=False, npeaks=3, minimum_frequency = 0.03/u.d, maximum_frequency = 12/u.d, nsigma=2,
