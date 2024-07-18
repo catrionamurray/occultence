@@ -21,15 +21,15 @@ def inject_flares(self, nfake, amp_range=[1e-4, 2], fwhm_range=[0.005, 0.012], m
             if count == nfake:
                 break
 
-    flare_lc.metadata['flares'] = {'nflares_injected': nfake, 'flare_params': {'t0': [],'fwhm': [],'amp': []}}
+    flare_lc.metadata['flares_injected'] = {'nflares_injected': nfake, 'flare_params': {'t0': [],'fwhm': [],'amp': []}}
     for t0, fwhm, a in zip(observed, fwhms, amps):
         fm = flare_model(model, self.time.value, t0, fwhm, a)
         fm[np.isnan(fm)] = 0
 
         flare_lc.timelike['flux'] = flare_lc.timelike['flux'] + fm
-        flare_lc.metadata['flares']['flare_params']['t0'].append(t0)
-        flare_lc.metadata['flares']['flare_params']['fwhm'].append(fwhm)
-        flare_lc.metadata['flares']['flare_params']['amp'].append(a)
+        flare_lc.metadata['flares_injected']['flare_params']['t0'].append(t0)
+        flare_lc.metadata['flares_injected']['flare_params']['fwhm'].append(fwhm)
+        flare_lc.metadata['flares_injected']['flare_params']['amp'].append(a)
 
     flare_lc._set_name(flare_lc.name + "_injectedflares")
 
