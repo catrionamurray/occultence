@@ -10,7 +10,7 @@ def mask_bad_weather(self, boxsize, thresh):
     :param thresh: Threshold for std dev to determine bad weather.
     :return:
     """
-    running_std = running_box(self.time, self.timelike['artifical_lightcurve'], boxsize, operation="std")
+    running_std = running_box(self.time, self.timelike['artificial_lightcurve'], boxsize, operation="std")
     mask = np.zeros(self.ntime)
     mask[running_std > thresh] = 1
 
