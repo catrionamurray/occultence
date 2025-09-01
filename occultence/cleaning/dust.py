@@ -1,6 +1,6 @@
 from ..imports import *
 
-def mask_dust(self, starts_of_dust_periods, ends_of_dust_periods):
+def mask_dust(self, starts_of_dust_periods, ends_of_dust_periods, verbose=False):
     """
     Mask entire periods during which dust affected observations [WARNING: this will remove ALL data in these periods,
     not just individual nights]
@@ -14,3 +14,9 @@ def mask_dust(self, starts_of_dust_periods, ends_of_dust_periods):
     self.masks['dust'] = np.zeros(self.ntime)
     for s, e in zip(starts_of_dust_periods, ends_of_dust_periods):
         self.masks['dust'][(self.time > s) & (self.time < e)] = 1
+
+    if verbose:
+        print(f"""
+                {100 * np.divide(float(np.count_nonzero(self.masks['dust'])),
+                                         len(self.masks['dust']))}% of data is flagged as dusty.
+            """)

@@ -3,7 +3,8 @@ from .gp import *
 from .sigma_clipping import first_sigma_clip, second_sigma_clip
 
 def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma=3, running_mean_boxsize=0.04,
-                        rotation_period=None, rotation_amp=None, plot=True, figsize=(12, 4), verbose=False, **kw):
+               use_uncertainties=True, rotation_period=None, rotation_amp=None, plot=True, figsize=(12, 4),
+               verbose=False, **kw):
 
     detrended_lightcurve = self._create_copy()
 
@@ -30,8 +31,8 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
         if plot:
             plt.plot(x, y, '.', alpha=0.5, label="Before Second Sigma-Clip")
 
-        y = second_sigma_clip(x=x, y=y, nsigma_lower=nsigma_lower, nsigma_upper=nsigma_upper,
-                              running_mean_boxsize=running_mean_boxsize)
+        y = second_sigma_clip(x=x, y=y, dy=yerr, nsigma_lower=nsigma_lower, nsigma_upper=nsigma_upper,
+                              running_mean_boxsize=running_mean_boxsize, use_uncertainties=use_uncertainties)
         if plot:
             plt.plot(x, y, '.', alpha=0.5, label="After Second Sigma-Clip")
 

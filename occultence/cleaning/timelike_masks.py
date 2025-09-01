@@ -24,7 +24,6 @@ def mask_timelike_threshold(self, timelike_key, threshold, op, verbose=False):
     self.masks[timelike_key] = mask
 
     if verbose:
-        print(f"""{(100 * np.divide(float(np.count_nonzero(self.masks[timelike_key])),
-                len(self.masks[timelike_key]))):.2f}% of data is flagged as {op} the threshold for {timelike_key} of 
-                {threshold}
+        print(f"""
+            {(100 * np.divide(float(np.count_nonzero(self.masks[timelike_key])), len(self.masks[timelike_key]))):.2f}% of data is flagged as {op} the threshold for {timelike_key} of {threshold}.
             """)

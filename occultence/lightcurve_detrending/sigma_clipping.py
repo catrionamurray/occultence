@@ -11,7 +11,7 @@ def first_sigma_clip(y, nsigma_upper, nsigma_lower, **kw):
     """
     return sigma_clip(y, sigma_upper=nsigma_upper, sigma_lower=nsigma_lower, **kw).filled(np.nan)
 
-def second_sigma_clip(x,y, nsigma_upper, nsigma_lower, running_mean_boxsize):
+def second_sigma_clip(x,y, dy, nsigma_upper, nsigma_lower, running_mean_boxsize, use_uncertainties=False, plot=False):
     """
     Perform running sigma clip.
     :param x: time data.
@@ -27,8 +27,11 @@ def second_sigma_clip(x,y, nsigma_upper, nsigma_lower, running_mean_boxsize):
     # iteratively sigma clip until data is no longer clipped
     while it == True:
         run_med = running_box(x, y, running_mean_boxsize, 'median')
-        run_std = running_box(x, y, running_mean_boxsize, 'std')
-        avg_std = np.nanmedian(run_std)
+        if use_uncertainties:
+            avg_std = dy
+        else:
+            run_std = running_box(x, y, running_mean_boxsize, 'std')
+            avg_std = np.nanmedian(run_std)
         cond = np.logical_or(y > run_med + (nsigma_upper * avg_std),
                               y < run_med - (nsigma_lower * avg_std))
         y[cond] = np.nan
@@ -45,7 +48,7 @@ def global_and_local_sigma_clip(self, global_sc_kw={'nsigma_upper':3, 'nsigma_lo
     clipped_lc = self._create_copy()
 
     y_clip_global = first_sigma_clip(self.flux, **global_sc_kw)
-    y_clip_local = second_sigma_clip(self.time.value, y_clip_global.copy(), **local_sc_kw)
+    y_clip_local = second_sigma_clip(self.time.value, y_clip_global.copy(), self.uncertainty, **local_sc_kw)
 
     clipped_lc.timelike['flux'] = y_clip_local
     clipped_lc._set_name(clipped_lc.name + "_sigmaclipped")

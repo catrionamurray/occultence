@@ -75,4 +75,8 @@ def extract(self, ind):
     new_lc = self._create_copy()
     for k, v in self.timelike.items():
         new_lc.timelike[k] = v[ind]
+    if new_lc.telescope is not None:
+        new_lc.telescope = new_lc.telescope[ind]
+    if new_lc.filter is not None:
+        new_lc.filter = new_lc.filter[ind]
     return new_lc
