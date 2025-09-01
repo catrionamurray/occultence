@@ -8,9 +8,12 @@ class LightCurve:
                  uncertainty: list = None,
                  timelike: dict = None,
                  metadata: dict = None,
+                 telescope: list = None,
+                 filter: list = None,
                  **kw):
 
         self._core_dictionaries = ["timelike", "metadata", "metamethods"]
+        self.telescope_colors = {'Callisto': "#6ca6ab", "Ganymede": "#c45f1b", "Io": "#a6241b", 'Europa': '#1f5cbf'}
 
         # self.metadata = {'name': name}
         self._set_name(name)
@@ -19,8 +22,7 @@ class LightCurve:
         self.masks = {}
         self.metamethods = {'plot_method': LightCurve.plot_split}
         self.split_by = 0.5*u.d
-        # for m in metadata:
-        #     self.metadata[m] = metadata[m]
+
         if metadata is not None:
             self.metadata.update(**metadata)
 
@@ -60,6 +62,20 @@ class LightCurve:
                 i_split, _ = self.split_time()
                 if len(i_split) == 2:
                     self.metamethods['plot_method'] = LightCurve.plot_all
+
+        if telescope is not None:
+            if type(telescope) == str:
+                telescope = np.array([telescope] * len(self.time))
+            for t in np.unique(telescope):
+                if t not in self.telescope_colors.keys():
+                    self.telescope_colors[t] = 'C0'
+
+        if filter is not None:
+            if type(filter) == str:
+                filter = np.array([filter] * len(self.time))
+
+        self.telescope = telescope
+        self.filter = filter
 
 
     def __repr__(self):
@@ -156,6 +172,29 @@ class LightCurve:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 return np.nanmedian(np.diff(self.time))
+
+    @property
+    def which_telescopes(self):
+        if self.telescope is None:
+            return None
+        else:
+            return np.unique(self.telescope)
+
+    @property
+    def which_filters(self):
+        if self.filter is None:
+            return None
+        else:
+            return np.unique(self.filter)
+
+    @property
+    def total_time_observed(self):
+        i_split, split_times = self.split_time(split=self.split_by)
+        total_time = 0
+        for t in split_times:
+            dt = t[-1] - t[0]
+            total_time += dt
+        return total_time
 
     def _validate_core_dictionaries(self):
         """
@@ -281,7 +320,10 @@ class LightCurve:
         new._initialize_from_dictionaries(
             **copy.deepcopy(self._get_core_dictionaries())
         )
-        new.split_by=self.split_by
+        new.split_by = self.split_by
+        new.telescope = self.telescope
+        new.filter = self.filter
+        new.telescope_colors = self.telescope_colors
         return new
 
     def _get_core_dictionaries(self):
@@ -337,11 +379,15 @@ class LightCurve:
             ind_finite = np.where(np.isfinite(new_lc.flux) == True)
             for k in new_lc.timelike.keys():
                 new_lc.timelike[k] = new_lc.timelike[k][ind_finite]
+            new_lc.telescope = new_lc.telescope[ind_finite]
+            new_lc.filter = new_lc.filter[ind_finite]
 
         if np.count_nonzero(~np.isfinite(new_lc.uncertainty)) > 0:
             ind_finite = np.where(np.isfinite(new_lc.uncertainty) == True)
             for k in new_lc.timelike.keys():
                 new_lc.timelike[k] = new_lc.timelike[k][ind_finite]
+            new_lc.telescope = new_lc.telescope[ind_finite]
+            new_lc.filter = new_lc.filter[ind_finite]
 
         return new_lc
 
@@ -356,6 +402,12 @@ class LightCurve:
 
         for k, v in self.timelike.items():
             split_lc.timelike[k] = v[i_split[i]:i_split[i + 1]]
+
+        for k, v in self.masks.items():
+            split_lc.masks[k] = v[i_split[i]:i_split[i + 1]]
+
+        split_lc.telescope = self.telescope[i_split[i]:i_split[i + 1]]
+        split_lc.filter = self.filter[i_split[i]:i_split[i + 1]]
 
         split_lc.metamethods = {'plot_method': LightCurve.plot_all}
 
@@ -390,6 +442,17 @@ class LightCurve:
                 """
                 )
 
+        # loop through mask quantities
+        for k in self.masks:
+            try:
+                new.masks[k] = np.hstack([self.masks[k], other.masks[k]])
+            except (KeyError, AttributeError):
+                cheerfully_suggest(
+                    f"""
+                .masks['{k}'] didn't exist for one of the objects; not merging.
+                """
+                )
+
         for k in self.metadata.keys():
             try:
                 if new.metadata[k] == other.metadata[k]:
@@ -414,6 +477,8 @@ class LightCurve:
                     else:
                         new.metadata[k] = [new.metadata[k], other.metadata[k]]
 
+        new.telescope = np.append(new.telescope, other.telescope)
+        new.filter = np.append(new.filter, other.filter)
         new.metamethods = {'plot_method': LightCurve.plot_split}
 
         # return the new Rainbow
@@ -422,21 +487,33 @@ class LightCurve:
     def plot(self, **kw):
         return self.metamethods['plot_method'](self, **kw)
 
-    def plot_all(self, ax=None, figsize=(12,4), ylims=[0.98,1.02], color='C0', label="", alpha=1.0, alpha_error=0.1,
-                 **kw):
+    def plot_all(self, quantity="flux", ax=None, figsize=(12,4), ylims=[0.98, 1.02], color=None, label="", alpha=1.0,
+                 alpha_error=0.1, **kw):
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
 
-        ax.plot(self.time.value, self.flux, '.', color=color, alpha=alpha, label=label, **kw)
-        ax.errorbar(self.time.value, self.flux, self.uncertainty, fmt='.', color=color, alpha=alpha_error, **kw)
+        if color is not None:
+            ax.plot(self.time.value, self.timelike[quantity], '.', color=color, alpha=alpha, label=label, **kw)
+            if quantity == "flux":
+                ax.errorbar(self.time.value, self.timelike[quantity], self.uncertainty, fmt='.',
+                            color=color, alpha=alpha_error, **kw)
+        else:
+            for t in self.which_telescopes:
+                ax.plot(self.time.value[self.telescope == t], self.timelike[quantity][self.telescope == t], '.',
+                        color=self.telescope_colors[t], alpha=alpha, label=label, **kw)
+                if quantity == "flux":
+                    ax.errorbar(self.time.value[self.telescope == t], self.timelike[quantity][self.telescope == t],
+                                self.uncertainty[self.telescope == t], fmt='.', color=self.telescope_colors[t],
+                                alpha=alpha_error, **kw)
+
         ax.set_ylim(ylims[0], ylims[1])
-        ax.set_ylabel("Flux")
+        ax.set_ylabel(quantity)
         ax.set_xlabel("Time [d]")
         ax.legend()
         return ax
 
-    def plot_split(self, ax=None, figsize=(36, 4), ylims=[0.98,1.02], alpha=1.0, color="C0", label="", alpha_error=0.1,
-                   **kw):
+    def plot_split(self, quantity="flux", ax=None, figsize=(36, 4), ylims=[0.98,1.02], alpha=1.0, color=None,
+                   label="", alpha_error=0.1, **kw):
         i_split, _ = self.split_time(split=self.split_by)
         if ax is None:
             fig, ax = plt.subplots(ncols=len(i_split)-1, figsize=figsize, sharey=True)
@@ -444,14 +521,41 @@ class LightCurve:
                 ax = [ax]
 
         for i, (i0, i1) in enumerate(zip(i_split[:-1], i_split[1:])):
-            ax[i].plot(self.time.value[i0:i1], self.flux[i0:i1], '.', color=color, alpha=alpha, label=label, **kw)
-            ax[i].errorbar(self.time.value[i0:i1], self.flux[i0:i1], self.uncertainty[i0:i1], fmt='.', color=color,
-                           alpha=alpha_error, **kw)
+            if color is not None:
+                ax[i].plot(self.time.value[i0:i1], self.timelike[quantity][i0:i1], '.', color=color, alpha=alpha, label=label, **kw)
+                if quantity=="flux":
+                    ax[i].errorbar(self.time.value[i0:i1], self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
+                                   fmt='.', color=color,alpha=alpha_error, **kw)
+            else:
+                c = self.telescope_colors[self.telescope[i0]]
+                ax[i].plot(self.time.value[i0:i1], self.timelike[quantity][i0:i1], '.', color=c, alpha=alpha, label=label, **kw)
+                if quantity=="flux":
+                    ax[i].errorbar(self.time.value[i0:i1], self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
+                                   fmt='.', color=c, alpha=alpha_error, **kw)
+
         ax[0].set_ylim(ylims[0], ylims[1])
-        ax[0].set_ylabel("Flux")
+        ax[0].set_ylabel(quantity)
         ax[-1].set_xlabel("Time [d]")
         ax[-1].legend()
         return ax
+
+    def plot_timelike_quantities(self, y_param="flux"):
+        n = len(self.timelike.keys())
+        if y_param == "time":
+            n = n - 1
+        else:
+            n = n - 2
+
+        fig, ax = plt.subplots(ncols=n, figsize=(3 * n, 4), sharey=True)
+        i = 0
+        for k, v in self.timelike.items():
+            if (k != 'time') & (k != y_param):
+                plt.sca(ax[i])
+                plt.plot(v, self.timelike[y_param], 'k.')
+                plt.xlabel(k)
+                if i == 0:
+                    plt.ylabel(y_param)
+                i += 1
 
     def phasefold(self, period):
         new_lc = self._create_copy()
@@ -483,7 +587,8 @@ class LightCurve:
     )
     from ..binning import (
         bin,
-        split_time
+        split_time,
+        extract,
     )
     from ..lightcurve_detrending import (
         gp_detrend,
@@ -494,6 +599,9 @@ class LightCurve:
         lsq_detrend_each_night,
         lsq_ridge_detrend,
         lsq_ridge_detrend_each_night,
+        lombscargle,
+        lombscargle_detrend,
+        global_and_local_sigma_clip
     )
     from ..transit_detecting import (
         find_transits,
@@ -518,7 +626,12 @@ class LightCurve:
         single_clean_bin,
     )
 
-    # from ..flare_finding import *
+    from ..flare_finding import (
+        inject_flares,
+        detect_flares_sclip,
+        model_each_flare,
+        manual_clean_flares,
+    )
     # from ..read import *
     # from ..write import *
     # from recovery import *

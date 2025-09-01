@@ -28,6 +28,7 @@ def clean(self,
           cosmic_boxsize: float = 0.02,
           cosmic_nsigma: int = 4,
           verbose: bool = False,
+          plot=False
           ):
     """
 
@@ -71,7 +72,7 @@ def clean(self,
             if verbose:
                 print("Masking bad weather...")
             if "artificial_lightcurve" in self.timelike:
-                self.mask_bad_weather(bad_weather_boxsize, bad_weather_threshvalue)
+                self.mask_bad_weather(bad_weather_boxsize, bad_weather_threshvalue, verbose=verbose)
             else:
                 # If there is no artifical lightcurve stored we cannot check for bad weather!
                 cheerfully_suggest(f""" The LightCurve's timelike dictionary does not appear to have the 'artifical_lightcurve' in it.
@@ -85,6 +86,11 @@ def clean(self,
             if thresh in self.timelike:
                 if verbose:
                     print(f"Masking {thresh}{threshold_operators[thresh]}{thresholds[thresh]}...")
+                if plot:
+                    y = self.timelike[thresh]
+                    axs = self.plot(quantity=thresh, ylims=[np.min(y), np.max(y)])
+                    for ax in axs:
+                        ax.axhline(thresholds[thresh], color='r', linestyle="--")
                 if threshold_operators[thresh] in operator_dict.keys():
                     self.mask_timelike_threshold(timelike_key=thresh,
                                                  threshold=thresholds[thresh],
@@ -110,10 +116,31 @@ def clean(self,
     if dust_removal:
         if verbose:
             print(f"Masking dust-crossing events...")
-        starts = [d[0] for d in dust_crossing_events[self.telescope]]
-        ends = [d[1] for d in dust_crossing_events[self.telescope]]
-        self.mask_dust(starts_of_dust_periods=starts,
-                       ends_of_dust_periods=ends)
+
+        # if hasattr(self, 'telescope'):
+        #     if self.telescope is not None:
+        #         starts, ends = [], []
+        #         for t in self.which_telescopes:
+        #             if t in dust_crossing_events:
+        #                 starts.extend([d[0] for d in dust_crossing_events[t]])
+        #                 ends.extend([d[1] for d in dust_crossing_events[t]])
+        #         self.mask_dust(starts_of_dust_periods=starts,
+        #                        ends_of_dust_periods=ends, verbose=verbose)
+
+        if hasattr(self, 'telescope'):
+            if self.telescope is not None:
+                self.masks['dust'] = np.zeros(self.ntime)
+                for t in self.which_telescopes:
+                    if t in dust_crossing_events:
+                        print(t)
+                        starts = [d[0] for d in dust_crossing_events[t]]
+                        ends = [d[1] for d in dust_crossing_events[t]]
+                        where_telescope = (self.telescope == t)
+                        subset = self.extract(where_telescope)
+                        subset.mask_dust(starts_of_dust_periods=starts,
+                                         ends_of_dust_periods=ends, verbose=True)
+                        self.masks['dust'][where_telescope] = subset.masks['dust']
+
 
     # clean before cosmic ray removal because it will reduce the running std dev. (making cosmics easier to spot)
     # CAN'T DO THIS - IT MESSES UP THE SIZES OF THE ARRAYS...
@@ -125,7 +152,7 @@ def clean(self,
     if cosmics_removal:
         if verbose:
             print("Masking cosmic ray hits...")
-        self.mask_cosmics(boxsize=cosmic_boxsize, nsigma=cosmic_nsigma)
+        self.mask_cosmics(boxsize=cosmic_boxsize, nsigma=cosmic_nsigma, verbose=verbose)
 
     self.get_clean_mask()
     self.get_clean_timelike()
@@ -139,6 +166,8 @@ def clean(self,
         else:
             cleaned = self.timelike[k][self.masks['total'] == 0] * 1
         cleaned_lightcurve.timelike[k] = cleaned
+    cleaned_lightcurve.telescope = self.telescope[self.masks['total'] == 0]
+    cleaned_lightcurve.filter = self.filter[self.masks['total'] == 0]
     # self.cleaned = cleaned_lightcurve
 
     cleaned_lightcurve._set_name(cleaned_lightcurve.name + "_clean")
@@ -153,7 +182,7 @@ def get_clean_mask(self):
     """
     self.masks['total'] = np.zeros(self.ntime)
     for mask in self.masks:
-        self.masks['total'] = (self.masks['total']!=0) | (self.masks[mask]!=0)
+        self.masks['total'] = (self.masks['total'] != 0) | (self.masks[mask] != 0)
     self.masks['total'] = np.array(self.masks['total'], dtype=int)
 
 def get_clean_timelike(self):

@@ -156,14 +156,14 @@ def plot_expected_planets(x, y, z, x_bins, y_bins, numstars, yscale, xscale, svn
 
 
 def plot_transitparams(x, y, z, xlabel="Radius", ylabel="SNR", zlabel="Detected?", ylims=[], yscale='uniform',
-                       xscale='uniform', add_points={}, svname="", figsize=(6,6)):
+                       xscale='uniform', add_points={}, pointsize = 10, svname="", figsize=(6,6)):
     x = np.array(x)
     y = np.array(y)
     z = np.array(z)
     markers = ['*', "x", "D", "^", 'o']
     plt.figure(figsize=figsize)
-    plt.scatter(x[z == 0], y[z == 0], s=1.2, color="#2694c7", alpha=0.7)
-    plt.scatter(x[z == 1], y[z == 1], s=1.2, color="#f08f18", alpha=0.7)
+    plt.scatter(x[z == 0], y[z == 0], s=pointsize, color="#2694c7", alpha=0.7)
+    plt.scatter(x[z == 1], y[z == 1], s=pointsize, color="#f08f18", alpha=0.7)
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
     if yscale == "log":

@@ -30,6 +30,7 @@ def lsq_ridge_detrend_each_night(self, param_list, highest_order=3, orig_lc=None
 
     return reconst
 
+
 def lsq_ridge_detrend(self, param_list, highest_order=3, orig_lc=None, orders=None, plot=False, verbose=False):
 
     if orig_lc is None:
