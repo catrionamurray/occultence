@@ -510,8 +510,12 @@ class LightCurve:
         was_injected_planet_recovered,
         full_injection_recovery,
         single_injection_recovery,
+        single_clean_detrend,
         split_lightcurve,
         was_planet_observed,
+        single_detrend,
+        single_predetrend,
+        single_clean_bin,
     )
 
     # from ..flare_finding import *
