@@ -1,4 +1,4 @@
-__version__ = "0.5.4"
+__version__ = "0.5.5"
 
 
 def version():
@@ -14,3 +14,4 @@ def version():
 # v0.5.1 - fixed bug in ...
 # v0.5.2 - fixed bug in bad weather removal
 # v0.5.3 - fixed bugs in flare detection and dust removal, small fixes
+# v0.5.5 - add nightly normalization

@@ -565,6 +565,31 @@ class LightCurve:
         new_lc.timelike['phase'] = ph_d
         return new_lc
 
+    def normalize(self, **kw):
+        new_lc = self._create_copy()
+        new_lc.timelike['flux'] = self.timelike['flux'] / np.nanmedian(self.timelike['flux'])
+
+        new_lc.metadata['normalization'] = {'norm_og_median': np.nanmedian(self.timelike['flux'])}
+        new_lc._set_name(new_lc.name + "_normalized")
+
+        return new_lc
+    def normalize_each_night(self, **kw):
+        """
+        Perform normalization for each night in the light curve timeseries.
+        :param self: LightCurve object
+        :param kw: keywords to pass to self.gp_detrend
+        :return: normalized LightCurve object
+        """
+        norm_days = []
+        for i in range(self.ndays):
+            norm_days.append(self.split_day(i).normalize(**kw))
+
+        reconst = norm_days[0]
+        for md in norm_days[1:]:
+            reconst = reconst.concatenate(md)
+
+        return reconst
+
 
 
     # from .remove_transit import (
