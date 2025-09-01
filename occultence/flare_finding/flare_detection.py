@@ -14,8 +14,8 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
                         n_points=3,
                         global_sc_kw={'nsigma_upper': 5, 'nsigma_lower': 5},
                         local_sc_kw={'nsigma_upper': 3, 'nsigma_lower': np.inf, 'running_mean_boxsize': 0.4},
-                        nbuffer_before = 3,
-                        nbuffer_after = 10,
+                        tbuffer_before = 5*u.minute,
+                        tbuffer_after = 20*u.minute,
                         plot=False):
     clip_lc = self._create_copy()
     clip_lc = clip_lc.global_and_local_sigma_clip(global_sc_kw=global_sc_kw, local_sc_kw=local_sc_kw)
@@ -75,49 +75,38 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
                 nfl = len(flare_regions)
                 fig, ax = plt.subplots(ncols=nfl, figsize=(nfl * 4, 3))
 
-                tgap = 1 * u.hour
+                buffered_flare_regions = []
                 for i, f in enumerate(flare_regions):
                     if nfl>1:
                         plt.sca(ax[i])
                     else:
                         plt.sca(ax)
-                    if f[0] - nbuffer_before >= 0:
-                        if self.time[f[0]] - self.time[f[0] - nbuffer_before] <= tgap:
-                            start_t = f[0] - nbuffer_before
-                        else:
-                            start_t = f[0]
-                    else:
-                        start_t = f[0]
 
-                    if f[1] + nbuffer_after < len(self.time):
-                        if self.time[f[1] + nbuffer_after]-self.time[f[1]] <= tgap:
-                            end_t = f[1] + nbuffer_after
-                        else:
-                            end_t = f[1]
-                    else:
-                        end_t = f[1]
+                    # Add user-defined buffer before and after flare
+                    t_before_flare = self.time[f[0]] - tbuffer_before
+                    t_after_flare = self.time[f[1]] + tbuffer_after
+                    start_t = np.where(self.time>t_before_flare)[0][0]
+                    end_t = np.where(self.time<t_after_flare)[0][-1]
 
-                    #
+                    buffered_flare_regions.append([start_t, end_t])
+
                     i_start = find_nearest(self.time.value, self.time.value[start_t] - 0.35)
                     i_end = find_nearest(self.time.value, self.time.value[end_t] + 0.35)
                     plt.plot(self.time.value[i_start:i_end], self.flux[i_start:i_end], 'k.')
-                    # plt.plot(self.time.value, self.flux, 'k.')
                     plt.plot(self.time.value[start_t:end_t], self.flux[start_t:end_t], 'g.')
-                    plt.plot(self.time.value[f[0]:f[1]],
-                             self.flux[f[0]:f[1]], 'r.')
-                    # plt.xlim(self.time.value[start_t] - 0.5, self.time.value[end_t] + 0.5)
+                    plt.plot(self.time.value[f[0]:f[1]], self.flux[f[0]:f[1]], 'r.')
 
-            clip_lc.metadata['flares_detected'] = {'nflares': len(flare_regions),
+            clip_lc.metadata['flares_detected'] = {'nflares': len(buffered_flare_regions),
                                                    'thresholds': {'duration': min_flare_duration,
                                                                  'sigma': local_sc_kw['nsigma_upper'],
                                                                  'separation': min_flare_separation},
-                                                   'flare_regions': flare_regions,
-                                                   'flare_frequency': len(flare_regions)/self.total_time_observed,
+                                                   'flare_regions': buffered_flare_regions,
+                                                   'flare_frequency': len(buffered_flare_regions)/self.total_time_observed,
                                                    'global_sc_kw':global_sc_kw,
                                                    'local_sc_kw':local_sc_kw
                                           }
             clip_lc.timelike['flux'] = self.flux.copy()
-            for r in flare_regions:
+            for r in buffered_flare_regions:
                 clip_lc.timelike['flux'][r[0]:r[1]] = np.nan
             clip_lc._set_name(clip_lc.name + "_flaresremoved")
         else:
