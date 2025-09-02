@@ -24,7 +24,8 @@ def full_injection_recovery(self,
                             bls_kw = {"minimum_period":0.5, "maximum_period":10,
                                       'transit_durations':np.linspace(0.01, 0.1, 4), 'plot':False, 'verbose': False},
                             bls_bin=7.5 * u.minute,
-                            recovery_kw = {'condition_on_epoch':1 * u.hour},
+                            recovery_kw = {'condition_on_epoch': 1 * u.hour, 'min_n_transits': 1,
+                                           'meet_condition': 'any'},
                             plot=False,
                             verbose=False,
                             time_this_process=False,
@@ -134,8 +135,8 @@ def full_injection_recovery(self,
     return lcs_with_transits, clean_lcs, detrend_lcs, bls_lcs, planets
 
 
-def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_overlap=None, condition_on_epoch=None,
-                                  condition_on_period=None, condition_on_snr=None):
+def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=None, condition_on_overlap=None,
+                                  condition_on_epoch=None, condition_on_period=None, condition_on_snr=None):
     """
     Returns a list of booleans whether each transit injected into the light curve was recovered by BLS based on user-
     defined conditions.
@@ -166,8 +167,12 @@ def was_injected_planet_recovered(self, condition_on_depth=None, condition_on_ov
             all_epochs.append(transit_t)
             transit_t += injected_params['period'][0].to_value('d')
 
+        n_transits = len(recovered_params['depth'])
+        if n_transits < min_n_transits:
+            recovered = [False]*n_transits
+
         # loop over all recovered transits
-        for transit in range(len(recovered_params['depth'])):
+        for transit in range(n_transits):
             recovered = True
 
             if len(all_epochs) == 0:

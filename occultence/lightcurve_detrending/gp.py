@@ -40,6 +40,7 @@ def gp(x,
        rotation_period=None,
        rotation_amp=None,
        sqexp_metric=0.5,
+       sqexp_metric_bound = [np.log(0.01), np.log(1000)],
        amp_metric=None,
        plot=False,
        figsize=(12,4),
@@ -54,7 +55,8 @@ def gp(x,
         amp = george.kernels.ConstantKernel(log_constant=np.log(np.std(y)))
     else:
         amp = george.kernels.ConstantKernel(log_constant=np.log(amp_metric))
-    sqexp = george.kernels.ExpSquaredKernel(sqexp_metric, metric_bounds={'log_M_0_0': (np.log(0.01), np.log(1000))})
+    sqexp = george.kernels.ExpSquaredKernel(sqexp_metric, metric_bounds={'log_M_0_0': (sqexp_metric_bound[0],
+                                                                                       sqexp_metric_bound[1])})
 
     # If the user has passed a rotation period to the GP then use quasi-periodic kernel, otherwise use a squared
     # exponential kernel.

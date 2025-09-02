@@ -2,7 +2,7 @@ from ..imports import *
 
 def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_period=30, limitperiod=False,
                   obj='likelihood', oversample=30.0, minpower=5, return_all_transits=False,
-                  plot=False, figsize=(12, 4), verbose=False):
+                  minimum_n_transit=3, plot=False, figsize=(12, 4), verbose=False):
 
     transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch':[], 'epoch_start':[], 'epoch_end':[], 'snr': []}
     bls_f_model_all, transit_params_all, stats_all, BLS_obj = self.bls(transit_durations=transit_durations,
@@ -13,6 +13,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                                                            oversample=oversample,
                                                            minpower=minpower,
                                                            return_all_transits=return_all_transits,
+                                                           minimum_n_transit=minimum_n_transit,
                                                            verbose=verbose)
 
     bls_lightcurve_all = []
@@ -28,13 +29,18 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                 for b in range(len(bls_transits)):
                     if bls_transits[b] > 0:
                         mid_transit = stats['transit_times'][b] * u.d #.value
-                        transit_start = mid_transit - (0.5 * transit_params[2] * u.d)#.to_value('d'))
-                        transit_end = mid_transit + (0.5 * transit_params[2] * u.d)#.to_value('d'))
+                        transit_start = mid_transit - (0.5 * transit_params[2] * u.d) #.to_value('d'))
+                        transit_end = mid_transit + (0.5 * transit_params[2] * u.d) #.to_value('d'))
 
                         recovered_per = transit_params[0] * u.d #np.log10(transit_params[0].to_value('d'))
                         recovered_dur = (transit_end - transit_start)
                         recovered_depth = stats['depth'][0]
-                        snr = (recovered_depth * np.sqrt(bls_transits[b])) / np.nanmedian(self.uncertainty)
+
+                        i_start = np.where((self.time.value*u.d) > transit_start)[0][0]
+                        i_end = np.where((self.time.value*u.d) < transit_end)[0][-1]
+                        unc = np.nanmedian(self.uncertainty[i_start:i_end])
+
+                        snr = (recovered_depth * np.sqrt(bls_transits[b])) / unc
 
                         transit_pd["period"].append(recovered_per)
                         transit_pd["depth"].append(recovered_depth)
@@ -50,6 +56,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                             plt.plot(self.time.value, bls_f_model, 'orange')
                             plt.axvline(transit_start.to_value('d'))
                             plt.axvline(transit_end.to_value('d'))
+                            plt.axvline(mid_transit.to_value('d'), linestyle='--')
                             plt.plot(self.time.value[transits], self.flux[transits], 'b.')
                             plt.title("SNR = %0.2f, Period = %0.2f" % (snr, recovered_per.value))
                             plt.xlim(transit_start.to_value('d') - 0.2, transit_start.to_value('d') + 0.2)
@@ -75,19 +82,21 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
 
 
 def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, obj, oversample, minpower,
-        return_all_transits, verbose):
+        return_all_transits, minimum_n_transit, verbose):
 
     if verbose:
         print("Running BLS Search")
 
-    if limitperiod:
-        maximum_period = min(30, max(self.time) - min(self.time))
-
-    periods = np.linspace(minimum_period, maximum_period, num=10000)
+    # if limitperiod:
+    #     maximum_period = min(30, max(self.time) - min(self.time))
+    #
+    # periods = np.linspace(minimum_period, maximum_period, num=10000)
 
     nan_mask = ~np.isnan(self.flux)
     BLS_d = BoxLeastSquares(self.time.value[nan_mask], self.flux[nan_mask], dy=self.uncertainty[nan_mask])
-    pg_d = BLS_d.power(periods, transit_durations, objective=obj, oversample=oversample)
+    # pg_d = BLS_d.power(periods, transit_durations, objective=obj, oversample=oversample)
+    pg_d = BLS_d.autopower(transit_durations, objective=obj, oversample=oversample, minimum_period=minimum_period,
+                           maximum_period=maximum_period, minimum_n_transit=minimum_n_transit)
     pers, power_d, epoch_d, depth_d, durs = pg_d.period, pg_d.power, pg_d.transit_time, pg_d.depth, pg_d.duration
 
     max_power = np.argmax(power_d)
@@ -101,7 +110,6 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
 
 
     sorted_ind_power = np.argsort(power_d)[::-1]
-
 
     if np.count_nonzero(np.isfinite(power_d)) > 0:
         if power_d[max_power] > minpower:

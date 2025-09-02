@@ -111,12 +111,23 @@ def single_injection_recovery(self, lc, planets, i, clean_kw, detrend_bin, detre
                 rec = bls_targ.was_injected_planet_recovered(**recovery_kw)
                 bls_targ.metadata['recovery'] = rec
 
+                recovered_n_transits = len(bls_targ.metadata['BLS_transits_params']['depth'])
+
+                if 'meet_condition' in recovery_kw:
+                    if recovery_kw['meet_condition'] == "any":
+                        min_n_transits = 1
+                    if recovery_kw['meet_condition'] == "all":
+                        min_n_transits = recovered_n_transits
+
+                n_recovered = 0
                 # loop over all detected transits (in this case most likely 1):
-                for r in range(len(bls_targ.metadata['BLS_transits_params']['depth'])):
+                for r in range(recovered_n_transits):
                     # !!! the following assumes we have only injected 1 planet at a time !!!:
                     if rec[0][r]:
-                        recovered = True
-                if recovered:
+                        n_recovered += 1
+                        # recovered = True
+
+                if n_recovered >= min_n_transits:
                     # total_recovered += 1
                     planets.loc[i, 'recovered'] = 1.0
                     planets.loc[i, 'log_Prec'] = bls_targ.metadata['BLS_transits_params']['period'][0].to_value('d')
@@ -334,7 +345,8 @@ def single_detrend(self, clean_targ, orig_bin_targ, detrend_kw, detrend_method, 
 
     return detrended_targ
 
-def single_bls(i, detrended_targ, bls_kw, recovery_kw, planets, time_this_process=False, verbose=False):
+def single_bls(i, detrended_targ, bls_kw, recovery_kw, planets, time_this_process=False,
+               verbose=False):
     # search for transit
     if time_this_process:
         t0 = time.time()

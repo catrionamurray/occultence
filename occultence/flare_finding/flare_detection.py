@@ -13,7 +13,7 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
                         n_consecutive_points=3,
                         n_points=3,
                         global_sc_kw={'nsigma_upper': 5, 'nsigma_lower': 5},
-                        local_sc_kw={'nsigma_upper': 3, 'nsigma_lower': np.inf, 'running_mean_boxsize': 0.4},
+                        local_sc_kw={'nsigma_upper': 3, 'nsigma_lower': np.inf, 'running_median_boxsize': 0.4},
                         tbuffer_before = 5*u.minute,
                         tbuffer_after = 20*u.minute,
                         plot=False):
@@ -46,8 +46,8 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
 
         if len(regions) > 0:
             diffs = np.array([(b - a) for a, b in zip(current_region[:-1], current_region[1:])])
-            if (len(current_region) > n_points) and (current_region[-1] != regions[-1][-1]) and\
-                    (np.count_nonzero(diffs == 1) > n_consecutive_points):
+            if (len(current_region) >= n_points) and (current_region[-1] != regions[-1][-1]) and\
+                    (np.count_nonzero(diffs == 1) >= n_consecutive_points):
                 t = clip_lc.time[current_region]
                 dur = np.max(t) - np.min(t)
                 if (dur > min_flare_duration) and (dur < self.split_by):

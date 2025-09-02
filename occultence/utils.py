@@ -5,7 +5,7 @@ def find_nearest(array, value):
     idx = np.nanargmin(np.abs(array - value))
     return idx
 
-def running_box(x,y,boxsize,operation):
+def running_box(x, y, boxsize, operation):
 
     if operation == "std":
         op = np.nanstd
