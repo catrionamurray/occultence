@@ -91,6 +91,8 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
                     else:
                         plt.sca(ax)
 
+                    start_t = buffered_flare_regions[i][0]
+                    end_t = buffered_flare_regions[i][1]
                     i_start = find_nearest(self.time.value, self.time.value[start_t] - 0.35)
                     i_end = find_nearest(self.time.value, self.time.value[end_t] + 0.35)
                     plt.plot(self.time.value[i_start:i_end], self.flux[i_start:i_end], 'k.')
