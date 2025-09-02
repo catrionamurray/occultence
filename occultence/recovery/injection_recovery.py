@@ -15,12 +15,12 @@ def full_injection_recovery(self,
                             minimum_period=0.5 * u.d,
                             maximum_period=10 * u.d,
                             ld=[0.385, 0.304],
-                            clean_kw = {'dust_removal':False, 'bad_weather_removal':False, 'cosmics_removal':True,
-                                        'cosmic_boxsize':0.08,'cosmic_nsigma':3},
+                            clean_kw = {'dust_removal': False, 'bad_weather_removal': False, 'cosmics_removal': True,
+                                        'cosmic_boxsize': 0.08, 'cosmic_nsigma': 3},
                             detrend_method = "gp",
                             detrend_bin = 20 * u.minute,
-                            detrend_kw = {'do_first_sigma_clip':True, 'do_second_sigma_clip':True,
-                                     'running_mean_boxsize':0.08, 'nsigma':3, 'plot':False},
+                            detrend_kw = {'do_first_sigma_clip': True, 'do_second_sigma_clip': True,
+                                     'running_mean_boxsize': 0.08, 'nsigma': 3, 'plot': False},
                             bls_kw = {"minimum_period":0.5, "maximum_period":10,
                                       'transit_durations':np.linspace(0.01, 0.1, 4), 'plot':False, 'verbose': False},
                             bls_bin=7.5 * u.minute,
@@ -136,7 +136,7 @@ def full_injection_recovery(self,
 
 
 def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=None, condition_on_overlap=None,
-                                  condition_on_epoch=None, condition_on_period=None, condition_on_snr=None):
+                                  condition_on_epoch=None, condition_on_period=None, condition_on_snr=None, **kw):
     """
     Returns a list of booleans whether each transit injected into the light curve was recovered by BLS based on user-
     defined conditions.

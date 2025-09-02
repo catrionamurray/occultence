@@ -200,21 +200,21 @@ def generate_planet_distribution(nfake, m_s, r_s, per=[np.log10(0.5),np.log10(10
 
     def generate_lognormal_range(n, tup, **kwargs):
         sigma = 15
-        mean=0
-        x=(np.random.lognormal(mean=mean, sigma=sigma, size=n))
+        mean = 0
+        x = (np.random.lognormal(mean=mean, sigma=sigma, size=n))
 
         for i in range(n):
             j = x[i]
-            while j<tup[0] or j>tup[1]:
+            while j < tup[0] or j > tup[1]:
                 j = np.random.lognormal(mean=mean, sigma=sigma, size=1)
-            x[i]=j
+            x[i] = j
 
         return x
 
     ms = []
 
     # loop over period, phase and radius and generate distributions:
-    for z,mode in zip([per,phase,radius],[mode_per,mode_phase,mode_radius]):
+    for z, mode in zip([per, phase, radius], [mode_per, mode_phase, mode_radius]):
 
         if mode == 'uniform':
             m = generate_range(nfake, z, **kwargs)
