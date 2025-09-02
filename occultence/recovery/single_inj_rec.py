@@ -1,13 +1,18 @@
 from ..imports import *
 import time
 
-def single_injection_recovery(self, lc, planets, i, clean_kw, detrend_bin, detrend_kw, bls_kw, bls_bin, recovery_kw,
-                              detrend_method, time_this_process, predetrend_bls=True, plot=False, verbose=False):
+def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_kw, flare_kw, detrend_bin, detrend_kw,
+                              bls_kw, bls_bin, recovery_kw, detrend_method, time_this_process, predetrend_bls=True,
+                              plot=False, verbose=False):
 
     if plot:
         ax = self.plot(color='C0', label='raw data')
         lc.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label='injected transit')
         plt.show()
+
+    # normalize
+    if normalize_each_night:
+        lc = self.normalize_each_night(lc)
 
     # clean
     if time_this_process:
@@ -17,9 +22,19 @@ def single_injection_recovery(self, lc, planets, i, clean_kw, detrend_bin, detre
         t1 = time.time()
         print(f"Time to clean LC: {t1-t0}")
 
+    # flares
+    if time_this_process:
+        t0 = time.time()
+    clean_targ = clean_targ.detect_flares_sclip(**flare_kw)
+    if time_this_process:
+        t1 = time.time()
+        print(f"Time to remove flares: {t1-t0}")
+
     if detrend_bin is not None:
         # bin before detrending
         bin_targ = clean_targ.bin(dt=detrend_bin)
+        bin_targ.telescope = np.array([bin_targ.telescope[0]] * bin_targ.ntime)
+        bin_targ.filter = np.array([bin_targ.filter[0]] * bin_targ.ntime)
     else:
         bin_targ = clean_targ
 

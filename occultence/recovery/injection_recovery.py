@@ -8,24 +8,26 @@ import warnings
 def full_injection_recovery(self,
                             nfake=10,
                             pool_bls=False,
-                            poolkw={'chunksize':1},
+                            poolkw={'chunksize': 1},
                             ncores=4,
                             minimum_planet_radius=0.5 * u.R_earth,
                             maximum_planet_radius=3 * u.R_earth,
                             minimum_period=0.5 * u.d,
                             maximum_period=10 * u.d,
                             ld=[0.385, 0.304],
-                            clean_kw = {'dust_removal': False, 'bad_weather_removal': False, 'cosmics_removal': True,
-                                        'cosmic_boxsize': 0.08, 'cosmic_nsigma': 3},
-                            detrend_method = "gp",
-                            detrend_bin = 20 * u.minute,
-                            detrend_kw = {'do_first_sigma_clip': True, 'do_second_sigma_clip': True,
-                                     'running_mean_boxsize': 0.08, 'nsigma': 3, 'plot': False},
-                            bls_kw = {"minimum_period":0.5, "maximum_period":10,
-                                      'transit_durations':np.linspace(0.01, 0.1, 4), 'plot':False, 'verbose': False},
+                            normalize_each_night=False,
+                            clean_kw={'dust_removal': False, 'bad_weather_removal': False, 'cosmics_removal': True,
+                                      'cosmic_boxsize': 0.08, 'cosmic_nsigma': 3},
+                            flare_kw={},
+                            detrend_method="gp",
+                            detrend_bin=20 * u.minute,
+                            detrend_kw={'do_first_sigma_clip': True, 'do_second_sigma_clip': True,
+                                        'running_mean_boxsize': 0.08, 'nsigma': 3, 'plot': False},
+                            bls_kw={"minimum_period": 0.5, "maximum_period": 10,
+                                    'transit_durations': np.linspace(0.01, 0.1, 4), 'plot': False, 'verbose': False},
                             bls_bin=7.5 * u.minute,
-                            recovery_kw = {'condition_on_epoch': 1 * u.hour, 'min_n_transits': 1,
-                                           'meet_condition': 'any'},
+                            recovery_kw={'condition_on_epoch': 1 * u.hour, 'min_n_transits': 1,
+                                         'meet_condition': 'any'},
                             plot=False,
                             verbose=False,
                             time_this_process=False,
@@ -33,7 +35,6 @@ def full_injection_recovery(self,
                             planets=None,
                             lcs_with_transits=None,
                             ):
-
     if planets is None or lcs_with_transits is None:
         lcs_with_transits, planets = self.inject_lots_of_transits(nfake=nfake,
                                                                   minimum_planet_radius=minimum_planet_radius,
@@ -44,7 +45,7 @@ def full_injection_recovery(self,
                                                                   fname=svname)
 
     bls_kw['verbose'] = verbose
-    clean_lcs, bin_lcs, detrend_lcs, bls_lcs = [],[],[],[]
+    clean_lcs, bin_lcs, detrend_lcs, bls_lcs = [], [], [], []
 
     if time_this_process:
         t0 = time.time()
@@ -65,6 +66,9 @@ def full_injection_recovery(self,
                 planets.loc[i, 'injected'] = 1.0
                 planets.loc[i, 'observed'] = int(lc.was_planet_observed())
 
+                if normalize_each_night:
+                    lc = lc.normalize_each_night()
+
                 clean_targ, bin_targ = self.single_clean_bin(lc, clean_kw, detrend_bin)
                 removed_nans = bin_targ.remove_nans()
                 bin_lcs.append(removed_nans)
@@ -76,8 +80,9 @@ def full_injection_recovery(self,
 
             # for now I cannot pool the GP-detrending - I believe it's an issue with george or NaNs
             for bin_lc, clean_lc, orig_bin_lc in zip(bin_lcs_pre, clean_lcs, bin_lcs):
-                detrend_lc = bin_lc.single_detrend(clean_targ=clean_lc, orig_bin_targ=orig_bin_lc, detrend_kw=detrend_kw,
-                                            detrend_method=detrend_method, bls_bin=bls_bin, )
+                detrend_lc = bin_lc.single_detrend(clean_targ=clean_lc, orig_bin_targ=orig_bin_lc,
+                                                   detrend_kw=detrend_kw,
+                                                   detrend_method=detrend_method, bls_bin=bls_bin, )
                 detrend_lcs.append(detrend_lc)
 
             # pool the post-detrend BLS
@@ -95,40 +100,43 @@ def full_injection_recovery(self,
 
     else:
         for i, lc in enumerate(lcs_with_transits):
-            try:
-                print(f"{i+1}/{len(lcs_with_transits)}...")
-                planets.loc[i, 'injected'] = 1.0
-                planets.loc[i, 'observed'] = int(lc.was_planet_observed())
-                clean_targ, detrend_targ, bls_targ, planets = self.single_injection_recovery(lc=lc,
-                                                                                            planets=planets,
-                                                                                            i=i,
-                                                                                            clean_kw=clean_kw,
-                                                                                            detrend_method=detrend_method,
-                                                                                            detrend_bin=detrend_bin,
-                                                                                            detrend_kw=detrend_kw,
-                                                                                            bls_kw=bls_kw,
-                                                                                            bls_bin=bls_bin,
-                                                                                            recovery_kw=recovery_kw,
-                                                                                            plot=plot,
-                                                                                            time_this_process=time_this_process,
-                                                                                            verbose=verbose)
-                planets.to_csv(svname, index=False)
-                clean_lcs.append(clean_targ)
-                detrend_lcs.append(detrend_targ)
-                bls_lcs.append(bls_targ)
-            except Exception as e:
-                print(e)
+            # try:
+            print(f"{i + 1}/{len(lcs_with_transits)}...")
+            planets.loc[i, 'injected'] = 1.0
+            planets.loc[i, 'observed'] = int(lc.was_planet_observed())
+
+            clean_targ, detrend_targ, bls_targ, planets = self.single_injection_recovery(lc=lc,
+                                                                                    planets=planets,
+                                                                                    i=i,
+                                                                                    normalize_each_night=normalize_each_night,
+                                                                                    flare_kw=flare_kw,
+                                                                                    clean_kw=clean_kw,
+                                                                                    detrend_method=detrend_method,
+                                                                                    detrend_bin=detrend_bin,
+                                                                                    detrend_kw=detrend_kw,
+                                                                                    bls_kw=bls_kw,
+                                                                                    bls_bin=bls_bin,
+                                                                                    recovery_kw=recovery_kw,
+                                                                                    plot=plot,
+                                                                                    time_this_process=time_this_process,
+                                                                                    verbose=verbose)
+            planets.to_csv(svname, index=False)
+            clean_lcs.append(clean_targ)
+            detrend_lcs.append(detrend_targ)
+            bls_lcs.append(bls_targ)
+            # except Exception as e:
+            #     print(e)
 
     if time_this_process:
         t1 = time.time()
-        print(f"Time to inject-recover {nfake} planets: {t1-t0}")
+        print(f"Time to inject-recover {nfake} planets: {t1 - t0}")
 
     # print summary
     print(f"Planets recovered: {100 * len(planets.loc[planets['recovered'] == 1.0]) / len(planets['recovered'])}%")
-    print("But not all of those planets transited during the observation window...")
+    print("But did all of those planets transited during the observation window?...")
     if len(planets['recovered'][planets['observed'] == 1.0]) > 0:
         print(f"""Observed Planets recovered: {(100 * len(planets.loc[(planets['recovered'] == 1.0) &
-                (planets['observed'] == 1.0)]) / len(planets['recovered'][planets['observed'] == 1.0])):.1f}%""")
+                                                                      (planets['observed'] == 1.0)]) / len(planets['recovered'][planets['observed'] == 1.0])):.1f}%""")
     else:
         print("None of the planets injected were observed!")
 

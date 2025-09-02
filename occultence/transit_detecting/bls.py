@@ -4,7 +4,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                   obj='likelihood', oversample=30.0, minpower=5, return_all_transits=False,
                   minimum_n_transit=3, plot=False, figsize=(12, 4), verbose=False):
 
-    transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch':[], 'epoch_start':[], 'epoch_end':[], 'snr': []}
+    transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch': [], 'epoch_start': [], 'epoch_end': [], 'snr': []}
     bls_f_model_all, transit_params_all, stats_all, BLS_obj = self.bls(transit_durations=transit_durations,
                                                            minimum_period= minimum_period,
                                                            maximum_period=maximum_period,
