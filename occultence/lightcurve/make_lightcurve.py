@@ -512,7 +512,7 @@ class LightCurve:
         ax.legend()
         return ax
 
-    def plot_split(self, quantity="flux", ax=None, figsize=(36, 4), ylims=[0.98,1.02], alpha=1.0, color=None,
+    def plot_split(self, quantity="flux", ax=None, figsize=(36, 4), ylims=[0.98, 1.02], alpha=1.0, color=None,
                    label="", alpha_error=0.1, **kw):
         i_split, _ = self.split_time(split=self.split_by)
         if ax is None:
