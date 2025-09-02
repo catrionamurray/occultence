@@ -59,6 +59,18 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
 
             flare_regions = [[r[0], r[-1]] for r in regions]
 
+            # flares = targ_flares_removed.metadata['flares_detected']
+            nfl = len(flare_regions)
+
+            buffered_flare_regions = []
+            for i, f in enumerate(flare_regions):
+                # Add user-defined buffer before and after flare
+                t_before_flare = self.time[f[0]] - tbuffer_before
+                t_after_flare = self.time[f[1]] + tbuffer_after
+                start_t = np.where(self.time > t_before_flare)[0][0]
+                end_t = np.where(self.time < t_after_flare)[0][-1]
+                buffered_flare_regions.append([start_t, end_t])
+
             if plot:
                 ax = clip_lc.plot_all(figsize=(20, 8))
                 self.extract(outliers).plot_all(ax=ax, color='orange', label=f">{local_sc_kw['nsigma_upper']}$\sigma$")
@@ -71,24 +83,13 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
 
                 plt.ylim(0.98, np.nanmax(self.flux))
 
-                # flares = targ_flares_removed.metadata['flares_detected']
-                nfl = len(flare_regions)
                 fig, ax = plt.subplots(ncols=nfl, figsize=(nfl * 4, 3))
 
-                buffered_flare_regions = []
                 for i, f in enumerate(flare_regions):
-                    if nfl>1:
+                    if nfl > 1:
                         plt.sca(ax[i])
                     else:
                         plt.sca(ax)
-
-                    # Add user-defined buffer before and after flare
-                    t_before_flare = self.time[f[0]] - tbuffer_before
-                    t_after_flare = self.time[f[1]] + tbuffer_after
-                    start_t = np.where(self.time>t_before_flare)[0][0]
-                    end_t = np.where(self.time<t_after_flare)[0][-1]
-
-                    buffered_flare_regions.append([start_t, end_t])
 
                     i_start = find_nearest(self.time.value, self.time.value[start_t] - 0.35)
                     i_end = find_nearest(self.time.value, self.time.value[end_t] + 0.35)
