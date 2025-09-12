@@ -20,6 +20,7 @@ from scipy.stats import binned_statistic
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from astropy.timeseries import BoxLeastSquares
+from pathlib import Path
 
 import warnings, textwrap
 
