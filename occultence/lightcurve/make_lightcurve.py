@@ -613,6 +613,7 @@ class LightCurve:
     from ..binning import (
         bin,
         split_time,
+        split_time_indices_only,
         extract,
     )
     from ..lightcurve_detrending import (

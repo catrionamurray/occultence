@@ -1,4 +1,4 @@
-__version__ = "0.5.7"
+__version__ = "0.5.8"
 
 
 def version():
@@ -16,3 +16,4 @@ def version():
 # v0.5.3 - fixed bugs in flare detection and dust removal, small fixes
 # v0.5.5 - add nightly normalization
 # v0.5.7 - updated recovery criteria
+# v0.5.8 - sped up binning
