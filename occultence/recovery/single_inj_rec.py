@@ -187,6 +187,8 @@ def single_clean_detrend(self, lc, clean_kw, detrend_bin, detrend_kw, detrend_me
     if detrend_bin is not None:
         # bin before detrending
         bin_targ = clean_targ.bin(dt=detrend_bin)
+        bin_targ.telescope = np.array([bin_targ.telescope[0]] * bin_targ.ntime)
+        bin_targ.filter = np.array([bin_targ.filter[0]] * bin_targ.ntime)
     else:
         bin_targ = clean_targ
     # ****************************
@@ -280,6 +282,8 @@ def single_clean_bin(self, lc, clean_kw, detrend_bin, time_this_process=False, p
     if detrend_bin is not None:
         # bin before detrending
         bin_targ = clean_targ.bin(dt=detrend_bin)
+        bin_targ.telescope = np.array([bin_targ.telescope[0]] * bin_targ.ntime)
+        bin_targ.filter = np.array([bin_targ.filter[0]] * bin_targ.ntime)
     else:
         bin_targ = clean_targ
     # ****************************

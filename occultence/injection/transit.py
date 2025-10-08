@@ -163,8 +163,8 @@ def mod_random(x, d=False, seed=667):
         return np.random.rand(x)
 
 def generate_planet_distribution(nfake, m_s, r_s, per=[np.log10(0.5),np.log10(10)],phase=[0,1], cosi=[0,1],
-                                 radius=[0.5, 6],mode_per="uniform", mode_phase="uniform",mode_cosi="uniform",
-                                 mode_radius="uniform",**kwargs):
+                                 radius=[0.5, 6], mode_per="uniform", mode_phase="uniform", mode_cosi="uniform",
+                                 mode_radius="uniform", **kwargs):
     """
     [ADAPTED FROM ALTAIPONY] Function to generate a planet distribution over period, phase, inclination and radius.
     :param nfake: Number of artificial planets to create.
