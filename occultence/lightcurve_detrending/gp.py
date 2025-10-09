@@ -47,6 +47,7 @@ def gp(x,
        verbose=False,
        plot_dir="",
        save_plots=False,
+       svname="",
        plotkw={'ylims': [0.95, 1.05]},
        i_lc=0,
        ):
@@ -151,7 +152,7 @@ def gp(x,
         plt.xlabel("Time")
         plt.ylabel("Relative Flux")
         if save_plots:
-            plt.savefig(f"{plot_dir}/{i_lc}_gp_detrended3")
+            plt.savefig(f"{plot_dir}/{svname}_gp_detrended3")
         else:
             plt.show()
         # plt.show()

@@ -50,6 +50,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
                                                                            rotation_period=rotation_period,
                                                                            rotation_amp=rotation_amp,
                                                                            plot=plot, figsize=figsize, verbose=verbose,
+                                                                           svname=self.name,
                                                                            **kw)
 
     detrended_lightcurve.timelike['gp_model'] = (gp_mu_og + 1)

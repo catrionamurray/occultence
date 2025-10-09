@@ -106,7 +106,7 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
 
                 plt.legend()
                 if save_plots:
-                    plt.savefig(f"{plot_dir}/{i_lc}_flares")
+                    plt.savefig(f"{plot_dir}/{self.name}_flares")
                 else:
                     plt.show()
 

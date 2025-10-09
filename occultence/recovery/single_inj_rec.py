@@ -6,7 +6,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
                               predetrend_bls=True, plot=False, verbose=False, plotkw={'ylims': [0.95, 1.05]},
                               save_lcs=False):
 
-    name = self.name
+    name = lc.name
     if plot:
         ax = self.plot(color='C0', label='raw data')
         lc.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label='injected transit')
@@ -15,7 +15,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         except Exception as e:
             print(e)
         if save_plots:
-            plt.savefig(f"{plot_dir}/{self.name}_injected_transit")
+            plt.savefig(f"{plot_dir}/{name}_injected_transit")
         else:
             plt.show()
 
@@ -127,7 +127,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         ax = bin_targ.plot(color='C0', label='clean lc')
         detrended_targ.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label=f'{detrend_method}-detrended')
         if save_plots:
-            plt.savefig(f"{plot_dir}/{self.name}_detrended")
+            plt.savefig(f"{plot_dir}/{detrended_targ.name}")
         else:
             plt.show()
 
@@ -296,7 +296,7 @@ def single_clean_detrend(self, lc, clean_kw, detrend_bin, detrend_kw, detrend_me
         ax = bin_targ.plot(color='C0', label='clean lc')
         detrended_targ.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label=f'{detrend_method}-detrended')
         if save_plots:
-            plt.savefig(f"{plot_dir}/{self.name}_detrended")
+            plt.savefig(f"{plot_dir}/{detrended_targ.name}")
         else:
             plt.show()
 
@@ -405,7 +405,7 @@ def single_detrend(self, clean_targ, orig_bin_targ, detrend_kw, detrend_method, 
         ax = self.plot(color='C0', label='clean lc')
         detrended_targ.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label=f'{detrend_method}-detrended')
         if save_plots:
-            plt.savefig(f"{plot_dir}/{self.name}_detrended")
+            plt.savefig(f"{plot_dir}/{detrended_targ.name}")
         else:
             plt.show()
 
