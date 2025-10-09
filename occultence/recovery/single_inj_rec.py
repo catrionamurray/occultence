@@ -6,6 +6,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
                               predetrend_bls=True, plot=False, verbose=False, plotkw={'ylims': [0.95, 1.05]},
                               save_lcs=False):
 
+    name = self.name
     if plot:
         ax = self.plot(color='C0', label='raw data')
         lc.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label='injected transit')
@@ -14,20 +15,20 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         except Exception as e:
             print(e)
         if save_plots:
-            plt.savefig(f"{plot_dir}/{i}_injected_transit")
+            plt.savefig(f"{plot_dir}/{i}_{name}_injected_transit")
         else:
             plt.show()
 
     if save_lcs:
         svname = "inj"
-        self.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
+        self.save(fname=f"{plot_dir}/{i}_{name}.pkl")
 
     # normalize
     if normalize_each_night:
         lc = self.normalize_each_night(lc)
         if save_lcs:
             svname = svname + "_norm"
-            lc.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
+            lc.save(fname=f"{plot_dir}/{i}_{lc.name}.pkl")
 
     # clean
     if time_this_process:
@@ -46,7 +47,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
     clean_targ = clean_targ.detect_flares_sclip(i_lc=i, **flare_kw)
     if save_lcs:
         svname = svname + "_flares"
-        clean_targ.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
+        clean_targ.save(fname=f"{plot_dir}/{i}_{clean_targ.name}.pkl")
     if time_this_process:
         t1 = time.time()
         print(f"Time to remove flares: {t1-t0}")
@@ -116,7 +117,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
 
     if save_lcs:
         svname = svname + "_detrended"
-        detrended_targ.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
+        detrended_targ.save(fname=f"{plot_dir}/{i}_{detrended_targ.name}.pkl")
 
     if time_this_process:
         t1 = time.time()
@@ -138,7 +139,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
 
     if save_lcs:
         svname = svname + "_bls"
-        bls_targs.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
+        bls_targs.save(fname=f"{plot_dir}/{i}_{bls_targs.name}.pkl")
 
     if time_this_process:
         t1 = time.time()
