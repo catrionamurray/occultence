@@ -1,4 +1,4 @@
-__version__ = "0.5.11"
+__version__ = "0.5.12"
 
 
 def version():
@@ -20,3 +20,4 @@ def version():
 # v0.5.9 - skip running the full IR if the planet is not observed
 # v0.5.10 - slightly speed up BLS
 # v0.5.11 - add the ability to save plots
+# v0.5.12 - add the ability to save LCs
