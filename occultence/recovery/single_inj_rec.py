@@ -26,7 +26,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
     if normalize_each_night:
         lc = self.normalize_each_night(lc)
         if save_lcs:
-            svname = svname + "norm"
+            svname = svname + "_norm"
             lc.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
 
     # clean
@@ -34,7 +34,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         t0 = time.time()
     clean_targ = lc.clean(**clean_kw)
     if save_lcs:
-        svname = svname + "clean"
+        svname = svname + "_clean"
         clean_targ.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
     if time_this_process:
         t1 = time.time()
@@ -45,7 +45,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         t0 = time.time()
     clean_targ = clean_targ.detect_flares_sclip(i_lc=i, **flare_kw)
     if save_lcs:
-        svname = svname + "flares"
+        svname = svname + "_flares"
         clean_targ.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
     if time_this_process:
         t1 = time.time()
@@ -115,7 +115,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         return None, None, None, None
 
     if save_lcs:
-        svname = svname + "detrended"
+        svname = svname + "_detrended"
         detrended_targ.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
 
     if time_this_process:
@@ -137,7 +137,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
     bls_targs = removed_nans.find_transits(i_lc=i, **bls_kw)
 
     if save_lcs:
-        svname = svname + "bls"
+        svname = svname + "_bls"
         bls_targs.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
 
     if time_this_process:
