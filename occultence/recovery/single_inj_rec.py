@@ -15,20 +15,20 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         except Exception as e:
             print(e)
         if save_plots:
-            plt.savefig(f"{plot_dir}/{i}_{name}_injected_transit")
+            plt.savefig(f"{plot_dir}/{self.name}_injected_transit")
         else:
             plt.show()
 
     if save_lcs:
         # svname = "inj"
-        self.save(fname=f"{plot_dir}/{i}_{name}.pkl")
+        self.save(fname=f"{plot_dir}/{name}.pkl")
 
     # normalize
     if normalize_each_night:
         lc = self.normalize_each_night(lc)
         if save_lcs:
             # svname = svname + "_norm"
-            lc.save(fname=f"{plot_dir}/{i}_{lc.name}.pkl")
+            lc.save(fname=f"{plot_dir}/{lc.name}.pkl")
 
     # clean
     if time_this_process:
@@ -36,7 +36,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
     clean_targ = lc.clean(**clean_kw)
     if save_lcs:
         # svname = svname + "_clean"
-        clean_targ.save(fname=f"{plot_dir}/{i}_{clean_targ.name}.pkl")
+        clean_targ.save(fname=f"{plot_dir}/{clean_targ.name}.pkl")
     if time_this_process:
         t1 = time.time()
         print(f"Time to clean LC: {t1-t0}")
@@ -47,7 +47,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
     clean_targ = clean_targ.detect_flares_sclip(i_lc=i, **flare_kw)
     if save_lcs:
         # svname = svname + "_flares"
-        clean_targ.save(fname=f"{plot_dir}/{i}_{clean_targ.name}.pkl")
+        clean_targ.save(fname=f"{plot_dir}/{clean_targ.name}.pkl")
     if time_this_process:
         t1 = time.time()
         print(f"Time to remove flares: {t1-t0}")
@@ -117,7 +117,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
 
     if save_lcs:
         # svname = svname + "_detrended"
-        detrended_targ.save(fname=f"{plot_dir}/{i}_{detrended_targ.name}.pkl")
+        detrended_targ.save(fname=f"{plot_dir}/{detrended_targ.name}.pkl")
 
     if time_this_process:
         t1 = time.time()
@@ -127,7 +127,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         ax = bin_targ.plot(color='C0', label='clean lc')
         detrended_targ.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label=f'{detrend_method}-detrended')
         if save_plots:
-            plt.savefig(f"{plot_dir}/{i}_detrended")
+            plt.savefig(f"{plot_dir}/{self.name}_detrended")
         else:
             plt.show()
 
@@ -139,7 +139,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
 
     if save_lcs:
         # svname = svname + "_bls"
-        bls_targs.save(fname=f"{plot_dir}/{i}_{bls_targs.name}.pkl")
+        bls_targs.save(fname=f"{plot_dir}/{bls_targs.name}.pkl")
 
     if time_this_process:
         t1 = time.time()
@@ -208,7 +208,7 @@ def single_clean_detrend(self, lc, clean_kw, detrend_bin, detrend_kw, detrend_me
         ax = self.plot(color='C0', label='raw data')
         lc.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label='injected transit')
         if save_plots:
-            plt.savefig(f"{plot_dir}/{i}_injected_transit")
+            plt.savefig(f"{plot_dir}/{self.name}_injected_transit")
         else:
             plt.show()
 
@@ -296,7 +296,7 @@ def single_clean_detrend(self, lc, clean_kw, detrend_bin, detrend_kw, detrend_me
         ax = bin_targ.plot(color='C0', label='clean lc')
         detrended_targ.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label=f'{detrend_method}-detrended')
         if save_plots:
-            plt.savefig(f"{plot_dir}/{i}_detrended")
+            plt.savefig(f"{plot_dir}/{self.name}_detrended")
         else:
             plt.show()
 
@@ -310,7 +310,7 @@ def single_clean_bin(self, lc, clean_kw, detrend_bin, time_this_process=False, p
         ax = self.plot(color='C0', label='raw data')
         lc.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label='injected transit')
         if save_plots:
-            plt.savefig(f"{plot_dir}/injected_transit_{i}")
+            plt.savefig(f"{plot_dir}/{self.name}_injected_transit")
         else:
             plt.show()
 
@@ -405,7 +405,7 @@ def single_detrend(self, clean_targ, orig_bin_targ, detrend_kw, detrend_method, 
         ax = self.plot(color='C0', label='clean lc')
         detrended_targ.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label=f'{detrend_method}-detrended')
         if save_plots:
-            plt.savefig(f"{plot_dir}/{i}_detrended")
+            plt.savefig(f"{plot_dir}/{self.name}_detrended")
         else:
             plt.show()
 

@@ -91,7 +91,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                             plt.title(f"SNR = {snr:.2f}, Period = {period_val.value:.2f}")
                             plt.xlim(transit_start.value - 0.2, transit_start.value + 0.2)
                             if save_plots:
-                                plt.savefig(f"{plot_dir}/{i_lc}_bls")
+                                plt.savefig(f"{plot_dir}/{self.name}_bls")
                                 plt.close()
                             else:
                                 plt.show()
@@ -226,7 +226,7 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
 
             if plot:
                 if save_plots:
-                    plt.savefig(f"{plot_dir}/{i_lc}_bls_periodogram")
+                    plt.savefig(f"{plot_dir}/{self.name}_bls_periodogram")
                     plt.close()
                 else:
                     plt.show()

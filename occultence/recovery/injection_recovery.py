@@ -46,6 +46,9 @@ def full_injection_recovery(self,
                             ):
 
 
+    if save_lcs:
+        self.save(fname=f"{plot_dir}/{self.name}.pkl")
+
     if planets is None or lcs_with_transits is None:
         lcs_with_transits, planets = self.inject_lots_of_transits(nfake=nfake,
                                                                   minimum_planet_radius=minimum_planet_radius,

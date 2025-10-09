@@ -65,7 +65,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
         plt.ylabel("Flux")
         plt.xlabel("Time [d]")
         if save_plots:
-            plt.savefig(f"{plot_dir}/{i_lc}_gp_detrended")
+            plt.savefig(f"{plot_dir}/{self.name}_gp_detrended")
         else:
             plt.show()
         plt.close()
@@ -84,7 +84,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
                 plt.plot(x_pred, y_pred, "orange", lw=1.5, alpha=0.8, zorder=2)
                 plt.xlim(self.split_day(i).time[0].value, self.split_day(i).time[-1].value)
             if save_plots:
-                plt.savefig(f"{plot_dir}/{i_lc}_gp_detrended2")
+                plt.savefig(f"{plot_dir}/{self.name}_gp_detrended2")
             else:
                 plt.show()
 

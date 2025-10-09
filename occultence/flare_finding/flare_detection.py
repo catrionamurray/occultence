@@ -129,7 +129,7 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
 
 
 def fit_flare(t, f, unc, p0, bounds, t_new=None, method="mendoza2022", plot=False, ax=None, plot_dir="",
-              save_plots=False, plotkw={'ylims': [0.95, 1.05]}, i_lc=0):
+              save_plots=False, plotkw={'ylims': [0.95, 1.05]}, svname=""):
     if method == "mendoza2022":
         mod = flare_model_mendoza2022
     elif method == "davenport2014":
@@ -156,7 +156,7 @@ def fit_flare(t, f, unc, p0, bounds, t_new=None, method="mendoza2022", plot=Fals
         plt.legend()
 
         if save_plots:
-            plt.savefig(f"{plot_dir}/{i_lc}_flares_models")
+            plt.savefig(f"{plot_dir}/{svname}_flares_models")
         else:
             plt.show()
 
@@ -209,7 +209,7 @@ def model_each_flare(self, flares_to_model, t, f, unc, n_before=3, n_after=5, me
             t_new = np.linspace(t[start_t], t[end_t], 200)
             y_fit, y_new, w = fit_flare(xsamp, ysamp, errsamp, p0, bounds, t_new, method=method, plot=plot,
                                         ax=ax[count], plot_dir=plot_dir, save_plots=save_plots,
-                                        plotkw=plotkw)
+                                        plotkw=plotkw, svname=self.name)
             tpeaks.append(w[0])
             fwhms.append(w[1])
             amps.append(w[2])
