@@ -1,4 +1,4 @@
-__version__ = "0.5.8"
+__version__ = "0.5.11"
 
 
 def version():
@@ -17,3 +17,6 @@ def version():
 # v0.5.5 - add nightly normalization
 # v0.5.7 - updated recovery criteria
 # v0.5.8 - sped up binning
+# v0.5.9 - skip running the full IR if the planet is not observed
+# v0.5.10 - slightly speed up BLS
+# v0.5.11 - add the ability to save plots

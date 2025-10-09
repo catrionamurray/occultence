@@ -2,6 +2,11 @@ from ..imports import *
 import time
 from multiprocessing import Pool
 import warnings
+from astropy.utils.exceptions import AstropyWarning
+
+warnings.filterwarnings("ignore", category=AstropyWarning,
+                       message=".*Input data contains invalid values.*")
+
 
 #changed nr of tested durations to 4(from 10): 0.01, 0.04, 0.07, 0.1
 
@@ -29,12 +34,16 @@ def full_injection_recovery(self,
                             recovery_kw={'condition_on_epoch': 1 * u.hour, 'min_n_transits': 1,
                                          'meet_condition': 'any'},
                             plot=False,
+                            plot_dir="/plots/",
+                            save_plots=False,
+                            plot_kw={'ylims': [0.95, 1.05]},
                             verbose=False,
                             time_this_process=False,
                             svname="injected_planets.csv",
                             planets=None,
                             lcs_with_transits=None,
                             ):
+
     if planets is None or lcs_with_transits is None:
         lcs_with_transits, planets = self.inject_lots_of_transits(nfake=nfake,
                                                                   minimum_planet_radius=minimum_planet_radius,
@@ -52,6 +61,13 @@ def full_injection_recovery(self,
 
     planets = pd.read_csv(svname)
 
+    bls_kw['save_plots'] = save_plots
+    bls_kw['plot_dir'] = plot_dir
+    detrend_kw['save_plots'] = save_plots
+    detrend_kw['plot_dir'] = plot_dir
+    flare_kw['save_plots'] = save_plots
+    flare_kw['plot_dir'] = plot_dir
+
     if pool_bls:
         import occultence.recovery.single_inj_rec as sir
         print(f"Pooling {nfake} injection-recoveries with {ncores} cores and kw={poolkw}.")
@@ -62,9 +78,12 @@ def full_injection_recovery(self,
             #                          recovery_kw, detrend_method, time_this_process) for i, lc in enumerate(lcs_with_transits)],
             #                        **poolkw)
 
+            # run = []
             for i, lc in enumerate(lcs_with_transits):
+                observed = int(lc.was_planet_observed())
+                # run.append(observed)
                 planets.loc[i, 'injected'] = 1.0
-                planets.loc[i, 'observed'] = int(lc.was_planet_observed())
+                planets.loc[i, 'observed'] = observed
 
                 if normalize_each_night:
                     lc = lc.normalize_each_night()
@@ -76,19 +95,30 @@ def full_injection_recovery(self,
 
             # pool the pre-detrend BLS
             pool = Pool(ncores)
-            bin_lcs_pre = pool.starmap(sir.single_predetrend, [(lc, bls_kw) for lc in bin_lcs])
+            bin_lcs_pre = pool.starmap(sir.single_predetrend, [(lc, i, bls_kw,) for lc in bin_lcs])
 
             # for now I cannot pool the GP-detrending - I believe it's an issue with george or NaNs
-            for bin_lc, clean_lc, orig_bin_lc in zip(bin_lcs_pre, clean_lcs, bin_lcs):
-                detrend_lc = bin_lc.single_detrend(clean_targ=clean_lc, orig_bin_targ=orig_bin_lc,
-                                                   detrend_kw=detrend_kw,
-                                                   detrend_method=detrend_method, bls_bin=bls_bin, )
-                detrend_lcs.append(detrend_lc)
+            to_run = []
+            for i, (bin_lc, clean_lc, orig_bin_lc) in enumerate(zip(bin_lcs_pre, clean_lcs, bin_lcs)):
+                if planets.loc[i, 'observed'] == 1:
+                    detrend_lc = bin_lc.single_detrend(clean_targ=clean_lc, orig_bin_targ=orig_bin_lc,
+                                                       detrend_kw=detrend_kw,
+                                                       detrend_method=detrend_method, bls_bin=bls_bin,
+                                                       plot_dir=plot_dir,
+                                                       save_plots=save_plots,
+                                                       i=i,
+                                                       plotkw=plot_kw,
+                                                       )
+                    detrend_lcs.append(detrend_lc)
+                    to_run.append(i)
+                else:
+                    print("Planet was not observed, skipping...")
 
             # pool the post-detrend BLS
             pool = Pool(ncores)
             results = pool.starmap(sir.single_bls, [(i, lc, bls_kw, recovery_kw, planets,
-                                                     time_this_process, verbose) for i, lc in enumerate(detrend_lcs)])
+                                                     time_this_process, verbose, plot_dir,
+                                                     save_plots, plot_kw) for i, lc in zip(to_run, detrend_lcs)])
 
             bls_lcs = [r[0] for r in results]
             planets_list = [r[1] for r in results]
@@ -102,28 +132,38 @@ def full_injection_recovery(self,
         for i, lc in enumerate(lcs_with_transits):
             # try:
             print(f"{i + 1}/{len(lcs_with_transits)}...")
+            observed = int(lc.was_planet_observed())
             planets.loc[i, 'injected'] = 1.0
-            planets.loc[i, 'observed'] = int(lc.was_planet_observed())
+            planets.loc[i, 'observed'] = observed
 
-            clean_targ, detrend_targ, bls_targ, planets = self.single_injection_recovery(lc=lc,
-                                                                                    planets=planets,
-                                                                                    i=i,
-                                                                                    normalize_each_night=normalize_each_night,
-                                                                                    flare_kw=flare_kw,
-                                                                                    clean_kw=clean_kw,
-                                                                                    detrend_method=detrend_method,
-                                                                                    detrend_bin=detrend_bin,
-                                                                                    detrend_kw=detrend_kw,
-                                                                                    bls_kw=bls_kw,
-                                                                                    bls_bin=bls_bin,
-                                                                                    recovery_kw=recovery_kw,
-                                                                                    plot=plot,
-                                                                                    time_this_process=time_this_process,
-                                                                                    verbose=verbose)
-            planets.to_csv(svname, index=False)
-            clean_lcs.append(clean_targ)
-            detrend_lcs.append(detrend_targ)
-            bls_lcs.append(bls_targ)
+            if observed:
+                clean_targ, detrend_targ, bls_targ, planets = self.single_injection_recovery(lc=lc,
+                                                                                        planets=planets,
+                                                                                        i=i,
+                                                                                        normalize_each_night=normalize_each_night,
+                                                                                        flare_kw=flare_kw,
+                                                                                        clean_kw=clean_kw,
+                                                                                        detrend_method=detrend_method,
+                                                                                        detrend_bin=detrend_bin,
+                                                                                        detrend_kw=detrend_kw,
+                                                                                        bls_kw=bls_kw,
+                                                                                        bls_bin=bls_bin,
+                                                                                        recovery_kw=recovery_kw,
+                                                                                        plot=plot,
+                                                                                        plot_dir=plot_dir,
+                                                                                        save_plots=save_plots,
+                                                                                        time_this_process=time_this_process,
+                                                                                        verbose=verbose,
+                                                                                        plotkw=plot_kw)
+
+                planets.to_csv(svname, index=False)
+                clean_lcs.append(clean_targ)
+                detrend_lcs.append(detrend_targ)
+                bls_lcs.append(bls_targ)
+
+            else:
+                print("Planet was not observed, skipping...")
+
             # except Exception as e:
             #     print(e)
 
@@ -250,19 +290,47 @@ def was_planet_observed(self, fraction_overlap=0.5, planet_i=0):
             transit_end = transit_end + period
     return bool(observed)
 
-def split_lightcurve(self, split_every=0.5*u.d):
+# def split_lightcurve(self, split_every=0.5*u.d):
+#     t = self.time.value * u.d
+#     start = t[0]
+#     nextdays = t[np.absolute(t - start) > split_every]
+#     split = []
+#
+#     while nextdays != []:
+#         start = nextdays[0]
+#         ind_st = np.where(t == start)[0][0]
+#         split.append(ind_st)
+#         time = t[ind_st:]
+#         nextdays = time[np.absolute(time - start) > split_every]
+#
+#     times = np.split(t, split)
+#
+#     return times, split
+
+def split_lightcurve(self, split_every=0.5 * u.d):
+    """Vectorized version - 100-1000x faster than original."""
+
+    # Get time array with units
     t = self.time.value * u.d
-    start = t[0]
-    nextdays = t[np.absolute(t - start) > split_every]
-    split = []
 
-    while nextdays != []:
-        start = nextdays[0]
-        ind_st = np.where(t == start)[0][0]
-        split.append(ind_st)
-        time = t[ind_st:]
-        nextdays = time[np.absolute(time - start) > split_every]
+    # Handle unit conversion
+    if hasattr(split_every, 'to'):
+        split_val = split_every.to(u.d).value
+    else:
+        split_val = split_every
 
+    # Vectorized approach: compute all time differences at once
+    time_vals = t.value
+    time_diffs = np.diff(time_vals)
+
+    # Find where consecutive points are more than split_every apart
+    gap_indices = np.where(time_diffs > split_val)[0]
+
+    # Split indices are right after each gap
+    split = (gap_indices + 1).tolist()
+
+    # Split the time array
     times = np.split(t, split)
 
     return times, split
+

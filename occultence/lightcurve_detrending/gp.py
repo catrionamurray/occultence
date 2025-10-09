@@ -44,7 +44,11 @@ def gp(x,
        amp_metric=None,
        plot=False,
        figsize=(12,4),
-       verbose=False
+       verbose=False,
+       plot_dir="",
+       save_plots=False,
+       plotkw={'ylims': [0.95, 1.05]},
+       i_lc=0,
        ):
 
     x_pred = np.linspace(np.min(x), np.max(x), 1000)
@@ -146,7 +150,11 @@ def gp(x,
         plt.plot(x_pred, y_pred, "orange", lw=1.5, alpha=0.8,zorder=2)
         plt.xlabel("Time")
         plt.ylabel("Relative Flux")
-        plt.show()
+        if save_plots:
+            plt.savefig(f"{plot_dir}/{i_lc}_gp_detrended3")
+        else:
+            plt.show()
+        # plt.show()
         plt.close()
 
     # except Exception as e:

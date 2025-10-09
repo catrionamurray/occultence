@@ -12,11 +12,16 @@ def detect_flares():
 def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separation=10*u.minute,
                         n_consecutive_points=3,
                         n_points=3,
-                        global_sc_kw={'nsigma_upper': 5, 'nsigma_lower': 5},
+                        global_sc_kw={'nsigma_upper': 5, 'nsigma_lower': np.inf,},
                         local_sc_kw={'nsigma_upper': 3, 'nsigma_lower': np.inf, 'running_median_boxsize': 0.4},
-                        tbuffer_before = 5*u.minute,
-                        tbuffer_after = 20*u.minute,
-                        plot=False):
+                        tbuffer_before= 5*u.minute,
+                        tbuffer_after= 20*u.minute,
+                        plot=False,
+                        plot_dir="",
+                        save_plots=False,
+                        plotkw={'ylims': [0.95, 1.05]},
+                        i_lc=0,
+                        ):
     clip_lc = self._create_copy()
     clip_lc = clip_lc.global_and_local_sigma_clip(global_sc_kw=global_sc_kw, local_sc_kw=local_sc_kw)
 
@@ -99,6 +104,11 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
                     plt.plot(self.time.value[start_t:end_t], self.flux[start_t:end_t], 'g.')
                     plt.plot(self.time.value[f[0]:f[1]], self.flux[f[0]:f[1]], 'r.')
 
+                if save_plots:
+                    plt.savefig(f"{plot_dir}/{i_lc}_flares")
+                else:
+                    plt.show()
+
             clip_lc.metadata['flares_detected'] = {'nflares': len(buffered_flare_regions),
                                                    'thresholds': {'duration': min_flare_duration,
                                                                  'sigma': local_sc_kw['nsigma_upper'],
@@ -117,7 +127,8 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
     return clip_lc
 
 
-def fit_flare(t, f, unc, p0, bounds, t_new=None, method="mendoza2022", plot=False, ax=None):
+def fit_flare(t, f, unc, p0, bounds, t_new=None, method="mendoza2022", plot=False, ax=None, plot_dir="",
+              save_plots=False, plotkw={'ylims': [0.95, 1.05]}, i_lc=0):
     if method == "mendoza2022":
         mod = flare_model_mendoza2022
     elif method == "davenport2014":
@@ -143,11 +154,17 @@ def fit_flare(t, f, unc, p0, bounds, t_new=None, method="mendoza2022", plot=Fals
         plt.plot(t_new, initial_guess, c='orange', label="Initial Guess")
         plt.legend()
 
+        if save_plots:
+            plt.savefig(f"{plot_dir}/{i_lc}_flares_models")
+        else:
+            plt.show()
+
     return yfit, ynew, w
 
 
 def model_each_flare(self, flares_to_model, t, f, unc, n_before=3, n_after=5, method="mendoza2022",
-                     tgap=(1 * u.hour).to_value('d'), plot=False):
+                     tgap=(1 * u.hour).to_value('d'), plot=False, plot_dir="",
+              save_plots=False, plotkw={'ylims': [0.95, 1.05]}):
 
     model_flares = self._create_copy()
     model_flares.metadata['flares_detected']['flares_to_model'] = flares_to_model
@@ -189,7 +206,9 @@ def model_each_flare(self, flares_to_model, t, f, unc, n_before=3, n_after=5, me
             bounds = ([t[start_t], 0, 0], [t[end_t], 100, 100])
 
             t_new = np.linspace(t[start_t], t[end_t], 200)
-            y_fit, y_new, w = fit_flare(xsamp, ysamp, errsamp, p0, bounds, t_new,method=method, plot=plot, ax=ax[count])
+            y_fit, y_new, w = fit_flare(xsamp, ysamp, errsamp, p0, bounds, t_new, method=method, plot=plot,
+                                        ax=ax[count], plot_dir=plot_dir, save_plots=save_plots,
+                                        plotkw=plotkw)
             tpeaks.append(w[0])
             fwhms.append(w[1])
             amps.append(w[2])

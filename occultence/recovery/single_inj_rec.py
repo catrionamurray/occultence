@@ -2,13 +2,20 @@ from ..imports import *
 import time
 
 def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_kw, flare_kw, detrend_bin, detrend_kw,
-                              bls_kw, bls_bin, recovery_kw, detrend_method, time_this_process, predetrend_bls=True,
-                              plot=False, verbose=False):
+                              bls_kw, bls_bin, recovery_kw, detrend_method, time_this_process, plot_dir, save_plots,
+                              predetrend_bls=True, plot=False, verbose=False, plotkw={'ylims': [0.95, 1.05]}):
 
     if plot:
         ax = self.plot(color='C0', label='raw data')
-        lc.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label='injected transit')
-        plt.show()
+        lc.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label='injected transit')
+        try:
+            lc.plot(quantity="transit_model", color='k', ax=ax, linestyle="-")
+        except Exception as e:
+            print(e)
+        if save_plots:
+            plt.savefig(f"{plot_dir}/{i}_injected_transit")
+        else:
+            plt.show()
 
     # normalize
     if normalize_each_night:
@@ -25,7 +32,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
     # flares
     if time_this_process:
         t0 = time.time()
-    clean_targ = clean_targ.detect_flares_sclip(**flare_kw)
+    clean_targ = clean_targ.detect_flares_sclip(i_lc=i, **flare_kw)
     if time_this_process:
         t1 = time.time()
         print(f"Time to remove flares: {t1-t0}")
@@ -44,7 +51,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         # do an initial search for transits to mask during detrending
         orig_bin_targ = bin_targ._create_copy()
         removed_nans = bin_targ.remove_nans()
-        bls_targs = removed_nans.find_transits(**bls_kw)
+        bls_targs = removed_nans.find_transits(i_lc=i, **bls_kw)
         if len(bls_targs) > 0:
             in_transit = bls_targs[0].metadata['BLS_transits_ind']
             bls_targs[0].masks['transit'] = np.zeros(bls_targs[0].ntime)
@@ -63,7 +70,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
 
     if detrend_method == "gp":
         # gp detrend
-        gp_targ = bin_targ.gp_detrend(**detrend_kw)
+        gp_targ = bin_targ.gp_detrend(i_lc=i, **detrend_kw)
 
         # we can also predict the GP for 7.5 min binning and use that for the BLS
         bin_targ = clean_targ.bin(dt=bls_bin)
@@ -99,14 +106,17 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
 
     if plot:
         ax = bin_targ.plot(color='C0', label='clean lc')
-        detrended_targ.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label=f'{detrend_method}-detrended')
-        plt.show()
+        detrended_targ.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label=f'{detrend_method}-detrended')
+        if save_plots:
+            plt.savefig(f"{plot_dir}/{i}_detrended")
+        else:
+            plt.show()
 
     # search for transit
     if time_this_process:
         t0 = time.time()
     removed_nans = detrended_targ.remove_nans()
-    bls_targs = removed_nans.find_transits(**bls_kw)
+    bls_targs = removed_nans.find_transits(i_lc=i, **bls_kw)
     if time_this_process:
         t1 = time.time()
         print(f"Time to BLS search: {t1-t0}")
@@ -168,11 +178,15 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
 
 
 def single_clean_detrend(self, lc, clean_kw, detrend_bin, detrend_kw, detrend_method, bls_kw, bls_bin,
-                         time_this_process=False, predetrend_bls=True, plot=False, verbose=False):
+                         time_this_process=False, predetrend_bls=True, plot=False, verbose=False, save_plots=False,
+                         plot_dir="", i=0, plotkw={'ylims':[0.95, 1.05]}):
     if plot:
         ax = self.plot(color='C0', label='raw data')
-        lc.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label='injected transit')
-        plt.show()
+        lc.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label='injected transit')
+        if save_plots:
+            plt.savefig(f"{plot_dir}/{i}_injected_transit")
+        else:
+            plt.show()
 
     # *** clean *****************
     if time_this_process:
@@ -200,7 +214,7 @@ def single_clean_detrend(self, lc, clean_kw, detrend_bin, detrend_kw, detrend_me
         # do an initial search for transits to mask during detrending
         orig_bin_targ = bin_targ._create_copy()
         removed_nans = bin_targ.remove_nans()
-        bls_targs = removed_nans.find_transits(**bls_kw)
+        bls_targs = removed_nans.find_transits(i_lc=i, **bls_kw)
         if len(bls_targs) > 0:
             in_transit = bls_targs[0].metadata['BLS_transits_ind']
             bls_targs[0].masks['transit'] = np.zeros(bls_targs[0].ntime)
@@ -256,18 +270,25 @@ def single_clean_detrend(self, lc, clean_kw, detrend_bin, detrend_kw, detrend_me
 
     if plot:
         ax = bin_targ.plot(color='C0', label='clean lc')
-        detrended_targ.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label=f'{detrend_method}-detrended')
-        plt.show()
+        detrended_targ.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label=f'{detrend_method}-detrended')
+        if save_plots:
+            plt.savefig(f"{plot_dir}/{i}_detrended")
+        else:
+            plt.show()
 
     # ****************************
 
     return clean_targ, detrended_targ
 
-def single_clean_bin(self, lc, clean_kw, detrend_bin, time_this_process=False, plot=False, verbose=False):
+def single_clean_bin(self, lc, clean_kw, detrend_bin, time_this_process=False, plot=False, verbose=False, save_plots=False,
+                         plot_dir="", plotkw={'ylims': [0.95, 1.05]}):
     if plot:
         ax = self.plot(color='C0', label='raw data')
-        lc.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label='injected transit')
-        plt.show()
+        lc.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label='injected transit')
+        if save_plots:
+            plt.savefig(f"{plot_dir}/injected_transit_{i}")
+        else:
+            plt.show()
 
     # *** clean *****************
     if time_this_process:
@@ -290,7 +311,7 @@ def single_clean_bin(self, lc, clean_kw, detrend_bin, time_this_process=False, p
 
     return clean_targ, bin_targ
 
-def single_predetrend(self, bls_kw, time_this_process=False, predetrend_bls=True, plot=False, verbose=False):
+def single_predetrend(self, i, bls_kw, time_this_process=False, predetrend_bls=True, verbose=False):
     # *** pre-detrend BLS ********
     if time_this_process:
         t0 = time.time()
@@ -298,7 +319,7 @@ def single_predetrend(self, bls_kw, time_this_process=False, predetrend_bls=True
         # do an initial search for transits to mask during detrending
         bin_targ = self._create_copy()
         removed_nans = bin_targ.remove_nans()
-        bls_targs = removed_nans.find_transits(**bls_kw)
+        bls_targs = removed_nans.find_transits(i_lc=i, **bls_kw)
         if len(bls_targs) > 0:
             in_transit = bls_targs[0].metadata['BLS_transits_ind']
             bls_targs[0].masks['transit'] = np.zeros(bls_targs[0].ntime)
@@ -313,7 +334,8 @@ def single_predetrend(self, bls_kw, time_this_process=False, predetrend_bls=True
     # ****************************
     return bin_targ
 def single_detrend(self, clean_targ, orig_bin_targ, detrend_kw, detrend_method, bls_bin,
-                         time_this_process=False, predetrend_bls=True, plot=False, verbose=False):
+                         time_this_process=False, predetrend_bls=True, plot=False, verbose=False, save_plots=False,
+                         plot_dir="", i=0, plotkw={'ylims': [0.95, 1.05]}):
 
     # ***  detrend  **************
     if time_this_process:
@@ -357,20 +379,23 @@ def single_detrend(self, clean_targ, orig_bin_targ, detrend_kw, detrend_method, 
 
     if plot:
         ax = self.plot(color='C0', label='clean lc')
-        detrended_targ.plot(ax=ax, ylims=[0.9, 1.1], color='C1', label=f'{detrend_method}-detrended')
-        plt.show()
+        detrended_targ.plot(ax=ax, ylims=plotkw['ylims'], color='C1', label=f'{detrend_method}-detrended')
+        if save_plots:
+            plt.savefig(f"{plot_dir}/{i}_detrended")
+        else:
+            plt.show()
 
     # ****************************
 
     return detrended_targ
 
 def single_bls(i, detrended_targ, bls_kw, recovery_kw, planets, time_this_process=False,
-               verbose=False):
+               verbose=False, save_plots=False, plot_dir="", plotkw={'ylims': [0.95, 1.05]}):
     # search for transit
     if time_this_process:
         t0 = time.time()
     removed_nans = detrended_targ.remove_nans()
-    bls_targs = removed_nans.find_transits(**bls_kw)
+    bls_targs = removed_nans.find_transits(i_lc=i, **bls_kw)
     if time_this_process:
         t1 = time.time()
         print(f"Time to BLS search: {t1-t0}")
