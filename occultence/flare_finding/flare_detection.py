@@ -101,9 +101,10 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
                     i_start = find_nearest(self.time.value, self.time.value[start_t] - 0.35)
                     i_end = find_nearest(self.time.value, self.time.value[end_t] + 0.35)
                     plt.plot(self.time.value[i_start:i_end], self.flux[i_start:i_end], 'k.')
-                    plt.plot(self.time.value[start_t:end_t], self.flux[start_t:end_t], 'g.')
-                    plt.plot(self.time.value[f[0]:f[1]], self.flux[f[0]:f[1]], 'r.')
+                    plt.plot(self.time.value[start_t:end_t], self.flux[start_t:end_t], 'g.', label="buffered flare region")
+                    plt.plot(self.time.value[f[0]:f[1]], self.flux[f[0]:f[1]], 'r.', label="flare region")
 
+                plt.legend()
                 if save_plots:
                     plt.savefig(f"{plot_dir}/{i_lc}_flares")
                 else:

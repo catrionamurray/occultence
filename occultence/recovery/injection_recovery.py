@@ -39,10 +39,12 @@ def full_injection_recovery(self,
                             plot_kw={'ylims': [0.95, 1.05]},
                             verbose=False,
                             time_this_process=False,
+                            save_lcs= False,
                             svname="injected_planets.csv",
                             planets=None,
                             lcs_with_transits=None,
                             ):
+
 
     if planets is None or lcs_with_transits is None:
         lcs_with_transits, planets = self.inject_lots_of_transits(nfake=nfake,
@@ -154,7 +156,8 @@ def full_injection_recovery(self,
                                                                                         save_plots=save_plots,
                                                                                         time_this_process=time_this_process,
                                                                                         verbose=verbose,
-                                                                                        plotkw=plot_kw)
+                                                                                        plotkw=plot_kw,
+                                                                                        save_lcs=save_lcs)
 
                 planets.to_csv(svname, index=False)
                 clean_lcs.append(clean_targ)

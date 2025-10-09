@@ -590,6 +590,10 @@ class LightCurve:
 
         return reconst
 
+    def save(self, fname):
+        import pickle as pkl
+        print(f"Saved LC as: {fname}")
+        pkl.dump(self, file=open(fname, 'wb'))
 
 
     # from .remove_transit import (

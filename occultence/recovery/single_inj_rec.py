@@ -3,7 +3,8 @@ import time
 
 def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_kw, flare_kw, detrend_bin, detrend_kw,
                               bls_kw, bls_bin, recovery_kw, detrend_method, time_this_process, plot_dir, save_plots,
-                              predetrend_bls=True, plot=False, verbose=False, plotkw={'ylims': [0.95, 1.05]}):
+                              predetrend_bls=True, plot=False, verbose=False, plotkw={'ylims': [0.95, 1.05]},
+                              save_lcs=False):
 
     if plot:
         ax = self.plot(color='C0', label='raw data')
@@ -17,14 +18,24 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         else:
             plt.show()
 
+    if save_lcs:
+        svname = "inj"
+        self.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
+
     # normalize
     if normalize_each_night:
         lc = self.normalize_each_night(lc)
+        if save_lcs:
+            svname = svname + "norm"
+            lc.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
 
     # clean
     if time_this_process:
         t0 = time.time()
     clean_targ = lc.clean(**clean_kw)
+    if save_lcs:
+        svname = svname + "clean"
+        clean_targ.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
     if time_this_process:
         t1 = time.time()
         print(f"Time to clean LC: {t1-t0}")
@@ -33,6 +44,9 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
     if time_this_process:
         t0 = time.time()
     clean_targ = clean_targ.detect_flares_sclip(i_lc=i, **flare_kw)
+    if save_lcs:
+        svname = svname + "flares"
+        clean_targ.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
     if time_this_process:
         t1 = time.time()
         print(f"Time to remove flares: {t1-t0}")
@@ -100,6 +114,10 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         print(f"{detrend_method} is not recognised. Please choose one of: 'gp', 'lsq', 'ridge' or 'mcmc'")
         return None, None, None, None
 
+    if save_lcs:
+        svname = svname + "detrended"
+        detrended_targ.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
+
     if time_this_process:
         t1 = time.time()
         print(f"Time to detrend: {t1-t0}")
@@ -117,6 +135,11 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         t0 = time.time()
     removed_nans = detrended_targ.remove_nans()
     bls_targs = removed_nans.find_transits(i_lc=i, **bls_kw)
+
+    if save_lcs:
+        svname = svname + "bls"
+        bls_targs.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
+
     if time_this_process:
         t1 = time.time()
         print(f"Time to BLS search: {t1-t0}")
