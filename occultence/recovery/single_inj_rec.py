@@ -20,14 +20,14 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
             plt.show()
 
     if save_lcs:
-        svname = "inj"
+        # svname = "inj"
         self.save(fname=f"{plot_dir}/{i}_{name}.pkl")
 
     # normalize
     if normalize_each_night:
         lc = self.normalize_each_night(lc)
         if save_lcs:
-            svname = svname + "_norm"
+            # svname = svname + "_norm"
             lc.save(fname=f"{plot_dir}/{i}_{lc.name}.pkl")
 
     # clean
@@ -35,8 +35,8 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         t0 = time.time()
     clean_targ = lc.clean(**clean_kw)
     if save_lcs:
-        svname = svname + "_clean"
-        clean_targ.save(fname=f"{plot_dir}/{i}_{svname}.pkl")
+        # svname = svname + "_clean"
+        clean_targ.save(fname=f"{plot_dir}/{i}_{clean_targ.name}.pkl")
     if time_this_process:
         t1 = time.time()
         print(f"Time to clean LC: {t1-t0}")
@@ -46,7 +46,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         t0 = time.time()
     clean_targ = clean_targ.detect_flares_sclip(i_lc=i, **flare_kw)
     if save_lcs:
-        svname = svname + "_flares"
+        # svname = svname + "_flares"
         clean_targ.save(fname=f"{plot_dir}/{i}_{clean_targ.name}.pkl")
     if time_this_process:
         t1 = time.time()
@@ -116,7 +116,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
         return None, None, None, None
 
     if save_lcs:
-        svname = svname + "_detrended"
+        # svname = svname + "_detrended"
         detrended_targ.save(fname=f"{plot_dir}/{i}_{detrended_targ.name}.pkl")
 
     if time_this_process:
@@ -138,7 +138,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
     bls_targs = removed_nans.find_transits(i_lc=i, **bls_kw)
 
     if save_lcs:
-        svname = svname + "_bls"
+        # svname = svname + "_bls"
         bls_targs.save(fname=f"{plot_dir}/{i}_{bls_targs.name}.pkl")
 
     if time_this_process:
