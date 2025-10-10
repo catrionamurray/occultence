@@ -139,7 +139,8 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
 
     if save_lcs:
         # svname = svname + "_bls"
-        bls_targs.save(fname=f"{plot_dir}/{bls_targs.name}.pkl")
+        for b in bls_targs:
+            b.save(fname=f"{plot_dir}/{b.name}.pkl")
 
     if time_this_process:
         t1 = time.time()

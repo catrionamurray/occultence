@@ -88,6 +88,11 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
 
                 plt.ylim(0.98, np.nanmax(self.flux))
 
+                if save_plots:
+                    plt.savefig(f"{plot_dir}/{self.name}_outliers")
+                else:
+                    plt.show()
+
                 fig, ax = plt.subplots(ncols=nfl, figsize=(nfl * 4, 3))
 
                 for i, f in enumerate(flare_regions):

@@ -1,4 +1,4 @@
-__version__ = "0.5.12"
+__version__ = "0.5.13"
 
 
 def version():
@@ -21,3 +21,4 @@ def version():
 # v0.5.10 - slightly speed up BLS
 # v0.5.11 - add the ability to save plots
 # v0.5.12 - add the ability to save LCs
+# v0.5.13 - change BLS from .autopower to .power
