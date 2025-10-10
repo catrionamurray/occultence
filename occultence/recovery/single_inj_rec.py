@@ -192,9 +192,9 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
                     # planets.loc[i, 'snr'] = np.max(bls_targ.metadata['BLS_transits_params']['snr'])
                     if verbose:
                         print("Planet was not successfully recovered")
-        else:
-            if verbose:
-                print("No transit found!\n")
+            else:
+                if verbose:
+                    print("No transit found!\n")
 
 
     # bls_lcs.append(bls_targ)

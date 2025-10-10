@@ -190,7 +190,8 @@ def full_injection_recovery(self,
 
 
 def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=None, condition_on_overlap=None,
-                                  condition_on_epoch=None, condition_on_period=None, condition_on_snr=None, **kw):
+                                  condition_on_epoch=None, condition_on_period=None, condition_on_snr=None,
+                                  verbose=False, **kw):
     """
     Returns a list of booleans whether each transit injected into the light curve was recovered by BLS based on user-
     defined conditions.
@@ -212,6 +213,10 @@ def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=Non
     injected_params = self.metadata['injected_planet']
     recovered_params = self.metadata['BLS_transits_params']
 
+    if verbose:
+        print(f"Injected planet parameters: {injected_params}")
+        print(f"Recovered planet parameters: {recovered_params}")
+
     # loop over all planet transits injected
     for planet in range(len(injected_params['depth'])):
 
@@ -224,6 +229,8 @@ def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=Non
         n_transits = len(recovered_params['depth'])
         if n_transits < min_n_transits:
             recovered = [False]*n_transits
+            if verbose:
+                print(f"We detect {n_transits} but the minimum required # of transits = {min_n_transits}")
 
         # loop over all recovered transits
         for transit in range(n_transits):
@@ -233,11 +240,17 @@ def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=Non
                 # if the planet occurred after the end of the observation window:
                 recovered = False
                 recovered_all_transits.append(recovered)
+                if verbose:
+                    print(f"The planet transited after the end of the observation window")
                 continue
 
             if condition_on_depth is not None:
                 if recovered_params['depth'][transit] < (condition_on_depth * injected_params['depth'][planet]):
                     recovered = False
+                    if verbose:
+                        print(f"""
+                        The recovered planet's depth ({recovered_params['depth'][transit]}) < {(condition_on_depth * injected_params['depth'][planet])}
+                        """)
 
             if condition_on_overlap is not None:
                 recovered = False
@@ -251,6 +264,11 @@ def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=Non
                 if overlap < (condition_on_overlap * injected_params['duration']):
                     recovered = False
 
+                    if verbose:
+                        print(f"""
+                        The recovered planet's overlaps with the true transit < {(condition_on_overlap * injected_params['duration'])}
+                        """)
+
             if condition_on_epoch is not None:
                 # print(all_epochs, recovered_params['epoch'][transit], transit_t, self.time.value[-1])
                 # print(self.metadata)
@@ -259,15 +277,30 @@ def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=Non
                         condition_on_epoch:
                     recovered = False
 
+                    if verbose:
+                        print(f"""
+                        The recovered planet's epoch > {condition_on_epoch} from the true transit.
+                        """)
+
             if condition_on_period is not None:
                 period_sway = condition_on_period * injected_params['period'][planet]
                 if (recovered_params['period'][transit] < injected_params['period'][planet] - period_sway) or \
                         (recovered_params['period'][transit] > injected_params['period'][planet] + period_sway):
                     recovered = False
 
+                    if verbose:
+                        print(f"""
+                        The recovered planet's period > {period_sway} from the true transit.
+                        """)
+
             if condition_on_snr is not None:
                 if recovered_params['snr'][transit] < condition_on_snr:
                     recovered = False
+
+                    if verbose:
+                        print(f"""
+                        The recovered planet's SNR < {condition_on_snr}.
+                        """)
 
             recovered_all_transits.append(recovered)
         recovered_all_planets.append(recovered_all_transits)

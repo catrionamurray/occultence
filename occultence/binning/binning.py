@@ -71,7 +71,7 @@ def bin(self, dt, bin_func=np.nanmedian, **kw):
 
         # Handle units and extract numeric values
         if isinstance(time_data, astropy.time.core.Time):
-            time_vals = time_data.mjd
+            time_vals = time_data.value
             if i == 0:
                 time_type_info = ('time', time_data.format, time_data.scale)
             dt_val = dt.to(astropy.units.day).value if hasattr(dt, 'to') else dt
@@ -151,7 +151,7 @@ def bin(self, dt, bin_func=np.nanmedian, **kw):
             if key == 'time_bin_size':
                 binned_lc.timelike[key] = concat_vals * astropy.units.day
             else:
-                binned_lc.timelike[key] = astropy.time.Time(concat_vals, format='mjd')
+                binned_lc.timelike[key] = astropy.time.Time(concat_vals, format=self.time.format)
         elif time_type_info[0] == 'quantity':
             binned_lc.timelike[key] = concat_vals * time_type_info[1]
         else:
@@ -201,7 +201,7 @@ def split_time(self, split=0.5 * u.d):
         # split has units
         if isinstance(time_data, astropy.time.core.Time):
             # Convert Time to numeric (days)
-            time_vals = time_data.mjd
+            time_vals = time_data.value
             split_val = split.to(u.day).value
         elif hasattr(time_data, 'unit'):
             # time is a Quantity
@@ -214,7 +214,7 @@ def split_time(self, split=0.5 * u.d):
     else:
         # split is plain number
         if isinstance(time_data, astropy.time.core.Time):
-            time_vals = time_data.mjd
+            time_vals = time_data.value
         elif hasattr(time_data, 'value'):
             time_vals = time_data.value
         else:
@@ -246,7 +246,7 @@ def split_time_indices_only(self, split=0.5 * u.d):
     time_data = self.time
     if hasattr(split, 'to'):
         if isinstance(time_data, astropy.time.core.Time):
-            time_vals = time_data.mjd
+            time_vals = time_data.value
             split_val = split.to(u.day).value
         elif hasattr(time_data, 'unit'):
             time_vals = time_data.value
@@ -256,7 +256,7 @@ def split_time_indices_only(self, split=0.5 * u.d):
             split_val = split.value
     else:
         if isinstance(time_data, astropy.time.core.Time):
-            time_vals = time_data.mjd
+            time_vals = time_data.value
         elif hasattr(time_data, 'value'):
             time_vals = time_data.value
         else:
