@@ -4,7 +4,8 @@ from .sigma_clipping import first_sigma_clip, second_sigma_clip
 
 def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma=3, running_median_boxsize=0.04,
                use_uncertainties=True, rotation_period=None, rotation_amp=None, plot=True, figsize=(12, 4),
-               verbose=False, plot_dir="", save_plots=False, plotkw={'ylims': [0.95, 1.05]}, i_lc=0, **kw):
+               verbose=False, plot_dir="", save_plots=False, min_save=True, plotkw={'ylims': [0.95, 1.05]}, i_lc=0,
+               **kw):
 
     detrended_lightcurve = self._create_copy()
 
@@ -65,7 +66,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
         plt.title("GP-detrended data")
         plt.ylabel("Flux")
         plt.xlabel("Time [d]")
-        if save_plots:
+        if save_plots and not min_save:
             plt.savefig(f"{plot_dir}/{self.name}_gp_detrended")
         else:
             plt.show()
@@ -84,7 +85,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
                                  color="orange", alpha=0.5, zorder=2)
                 plt.plot(x_pred, y_pred, "orange", lw=1.5, alpha=0.8, zorder=2)
                 plt.xlim(self.split_day(i).time[0].value, self.split_day(i).time[-1].value)
-            if save_plots:
+            if save_plots and not min_save:
                 plt.savefig(f"{plot_dir}/{self.name}_gp_detrended2")
             else:
                 plt.show()

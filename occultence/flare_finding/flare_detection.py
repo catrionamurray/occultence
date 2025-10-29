@@ -19,6 +19,7 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
                         plot=False,
                         plot_dir="",
                         save_plots=False,
+                        min_save=True,
                         plotkw={'ylims': [0.95, 1.05]},
                         i_lc=0,
                         ):
@@ -88,7 +89,7 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
 
                 plt.ylim(0.98, np.nanmax(self.flux))
 
-                if save_plots:
+                if save_plots and not min_save:
                     plt.savefig(f"{plot_dir}/{self.name}_outliers")
                 else:
                     plt.show()
@@ -110,7 +111,7 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
                     plt.plot(self.time.value[f[0]:f[1]], self.flux[f[0]:f[1]], 'r.', label="flare region")
 
                 plt.legend()
-                if save_plots:
+                if save_plots and not min_save:
                     plt.savefig(f"{plot_dir}/{self.name}_flares")
                 else:
                     plt.show()
@@ -134,7 +135,7 @@ def detect_flares_sclip(self, min_flare_duration=5 * u.minute, min_flare_separat
 
 
 def fit_flare(t, f, unc, p0, bounds, t_new=None, method="mendoza2022", plot=False, ax=None, plot_dir="",
-              save_plots=False, plotkw={'ylims': [0.95, 1.05]}, svname=""):
+              save_plots=False, plotkw={'ylims': [0.95, 1.05]}, svname="", min_save=True):
     if method == "mendoza2022":
         mod = flare_model_mendoza2022
     elif method == "davenport2014":
@@ -160,7 +161,7 @@ def fit_flare(t, f, unc, p0, bounds, t_new=None, method="mendoza2022", plot=Fals
         plt.plot(t_new, initial_guess, c='orange', label="Initial Guess")
         plt.legend()
 
-        if save_plots:
+        if save_plots and not min_save:
             plt.savefig(f"{plot_dir}/{svname}_flares_models")
         else:
             plt.show()
@@ -170,7 +171,7 @@ def fit_flare(t, f, unc, p0, bounds, t_new=None, method="mendoza2022", plot=Fals
 
 def model_each_flare(self, flares_to_model, t, f, unc, n_before=3, n_after=5, method="mendoza2022",
                      tgap=(1 * u.hour).to_value('d'), plot=False, plot_dir="",
-              save_plots=False, plotkw={'ylims': [0.95, 1.05]}):
+              save_plots=False, plotkw={'ylims': [0.95, 1.05]}, min_save=True):
 
     model_flares = self._create_copy()
     model_flares.metadata['flares_detected']['flares_to_model'] = flares_to_model

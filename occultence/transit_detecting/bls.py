@@ -3,7 +3,7 @@ from ..imports import *
 def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_period=30, limitperiod=False,
                   obj='likelihood', oversample=30.0, minpower=5, return_all_transits=False,
                   minimum_n_transit=3, plot=False, figsize=(12, 4), verbose=False, save_plots=False,
-                  nperiods=None, plot_dir="", i_lc=0, plot_kw={'ylims': [0.95, 1.05]}):
+                  nperiods=None, plot_dir="", i_lc=0, plot_kw={'ylims': [0.95, 1.05]}, min_save=True):
 
     transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch': [], 'epoch_start': [], 'epoch_end': [], 'snr': []}
 
@@ -18,7 +18,8 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                                                            return_all_transits=return_all_transits,
                                                            minimum_n_transit=minimum_n_transit,
                                                            nperiods=nperiods,
-                                                           verbose=verbose)
+                                                           verbose=verbose,
+                                                           min_save=min_save,)
 
     # Pre-compute time array with units once
     time_with_units = self.time.value * u.d
@@ -163,7 +164,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
 
 def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, obj, oversample, minpower,
         return_all_transits, minimum_n_transit, verbose, nperiods=None, plot=False, figsize=(12, 4),
-        save_plots=False, plot_dir="", i_lc=0, plot_kw={'ylims': [0.95, 1.05]}):
+        save_plots=False, plot_dir="", i_lc=0, plot_kw={'ylims': [0.95, 1.05]}, min_save=True):
 
     if verbose:
         print("Running BLS Search")
@@ -233,7 +234,7 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
                     plt.figure()
                     plt.plot(pers, power_d)
                     plt.plot(pers[power_ind], power_d[power_ind], 'rx')
-                    if save_plots:
+                    if save_plots and not min_save:
                         plt.savefig(f"{plot_dir}/{self.name}_bls_periodogram")
                     else:
                         plt.show()
@@ -248,7 +249,7 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
                 return [f_model], [[best_per_d, best_t0_d, best_dur_d, best_depth_d]], [stats], BLS_d
 
             if plot:
-                if save_plots:
+                if save_plots and not min_save:
                     plt.savefig(f"{plot_dir}/{self.name}_bls_periodogram")
                     plt.close()
                 else:

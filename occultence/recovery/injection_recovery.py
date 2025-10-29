@@ -41,6 +41,7 @@ def full_injection_recovery(self,
                             time_this_process=False,
                             save_lcs= False,
                             svname="injected_planets.csv",
+                            min_save=True,
                             planets=None,
                             lcs_with_transits=None,
                             ):
@@ -68,10 +69,14 @@ def full_injection_recovery(self,
 
     bls_kw['save_plots'] = save_plots
     bls_kw['plot_dir'] = plot_dir
+    bls_kw['min_save'] = min_save
     detrend_kw['save_plots'] = save_plots
     detrend_kw['plot_dir'] = plot_dir
+    detrend_kw['min_save'] = min_save
     flare_kw['save_plots'] = save_plots
     flare_kw['plot_dir'] = plot_dir
+    flare_kw['min_save'] = min_save
+    # plot_kw['min_save'] = min_save
 
     if pool_bls:
         import occultence.recovery.single_inj_rec as sir
@@ -86,7 +91,6 @@ def full_injection_recovery(self,
             # run = []
             for i, lc in enumerate(lcs_with_transits):
                 observed = int(lc.was_planet_observed())
-                # run.append(observed)
                 planets.loc[i, 'injected'] = 1.0
                 planets.loc[i, 'observed'] = observed
 
@@ -160,7 +164,8 @@ def full_injection_recovery(self,
                                                                                         time_this_process=time_this_process,
                                                                                         verbose=verbose,
                                                                                         plotkw=plot_kw,
-                                                                                        save_lcs=save_lcs)
+                                                                                        save_lcs=save_lcs,
+                                                                                        min_save=min_save,)
 
                 planets.to_csv(svname, index=False)
                 clean_lcs.append(clean_targ)
