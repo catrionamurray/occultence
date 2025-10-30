@@ -19,6 +19,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                                                            minimum_n_transit=minimum_n_transit,
                                                            nperiods=nperiods,
                                                            verbose=verbose,
+                                                           plot=plot,
                                                            min_save=min_save,)
 
     # Pre-compute time array with units once
