@@ -8,7 +8,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
     transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch': [], 'epoch_start': [], 'epoch_end': [], 'snr': []}
 
 
-    bls_f_model_all, transit_params_all, stats_all, BLS_obj = self.bls(transit_durations=transit_durations,
+    bls_f_model_all, transit_params_all, stats_all, BLS_obj, periodogram = self.bls(transit_durations=transit_durations,
                                                            minimum_period= minimum_period,
                                                            maximum_period=maximum_period,
                                                            limitperiod=limitperiod,
@@ -227,7 +227,7 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
                     power_ind = sorted_ind_power[i]
                     print(i, power_ind, )
                 return allf_models, \
-                    [[ap, at, ad, ade] for ap, at, ad, ade in zip(allpers, allt0s, alldurs, alldepths)], allstats, BLS_d
+                    [[ap, at, ad, ade] for ap, at, ad, ade in zip(allpers, allt0s, alldurs, alldepths)], allstats, BLS_d, pg_d
             else:
 
                 if plot:
@@ -247,7 +247,7 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
                 stats = BLS_d.compute_stats(best_per_d, best_dur_d, best_t0_d)
 
                 f_model = BLS_d.model(t_model=self.time.value, period=best_per_d, duration=best_dur_d, transit_time=best_t0_d)
-                return [f_model], [[best_per_d, best_t0_d, best_dur_d, best_depth_d]], [stats], BLS_d
+                return [f_model], [[best_per_d, best_t0_d, best_dur_d, best_depth_d]], [stats], BLS_d, pg_d
 
             if plot:
                 if save_plots and not min_save:
@@ -259,12 +259,12 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
         else:
             if verbose:
                 print("No transits detected!")
-            return np.ones(len(self.time)), [], [], []
+            return np.ones(len(self.time)), [], [], [], pg_d
 
     else:
         if verbose:
             print("No transits detected!")
-        return np.ones(len(self.time)), [], [], []
+        return np.ones(len(self.time)), [], [], [], pg_d
 
 
 
