@@ -1,4 +1,4 @@
-__version__ = "0.5.15"
+__version__ = "0.5.17"
 
 
 def version():
@@ -23,3 +23,4 @@ def version():
 # v0.5.12 - add the ability to save LCs
 # v0.5.13 - change BLS from .autopower to .power
 # v0.5.14 - added "min_save" kw
+# v0.5.16 - return BLS periodogram, save BLS SNR

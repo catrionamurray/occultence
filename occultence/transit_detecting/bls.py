@@ -5,7 +5,8 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                   minimum_n_transit=3, plot=False, figsize=(12, 4), verbose=False, save_plots=False,
                   nperiods=None, plot_dir="", i_lc=0, plot_kw={'ylims': [0.95, 1.05]}, min_save=True):
 
-    transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch': [], 'epoch_start': [], 'epoch_end': [], 'snr': []}
+    transit_pd = {"period": [], "power":[], "depth": [], 'duration': [], 'epoch': [], 'epoch_start': [],
+                  'epoch_end': [], 'snr': []}
 
 
     bls_f_model_all, transit_params_all, stats_all, BLS_obj, periodogram = self.bls(transit_durations=transit_durations,
@@ -39,7 +40,8 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
             if len(bls_transits) > 0:
                 # Pre-extract transit parameters (avoid repeated indexing)
                 period_val = transit_params[0] * u.d
-                duration_val = transit_params[2] * u.d
+                duration_val = transit_params[3] * u.d
+                power = transit_params[1]
                 half_duration = 0.5 * duration_val
 
                 # Vectorize transit processing
@@ -82,6 +84,7 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                         transit_pd['epoch_start'].append(transit_start)
                         transit_pd['epoch_end'].append(transit_end)
                         transit_pd['snr'].append(snr)
+                        transit_pd['power'].append(power)
 
                         if plot:
                             plt.figure(figsize=figsize)
@@ -99,53 +102,10 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                             else:
                                 plt.show()
                                 plt.close()
-                            # plt.show()
-                            # plt.close()
                 else:
                     transit_found = False
                     transits = []
 
-                # for b in range(len(bls_transits)):
-                #     if bls_transits[b] > 0:
-                #         mid_transit = stats['transit_times'][b] * u.d #.value
-                #         transit_start = mid_transit - (0.5 * transit_params[2] * u.d) #.to_value('d'))
-                #         transit_end = mid_transit + (0.5 * transit_params[2] * u.d) #.to_value('d'))
-                #
-                #         recovered_per = transit_params[0] * u.d #np.log10(transit_params[0].to_value('d'))
-                #         recovered_dur = (transit_end - transit_start)
-                #         recovered_depth = stats['depth'][0]
-                #
-                #         i_start = np.where((self.time.value*u.d) > transit_start)[0][0]
-                #         i_end = np.where((self.time.value*u.d) < transit_end)[0][-1]
-                #         unc = np.nanmedian(self.uncertainty[i_start:i_end])
-                #
-                #         snr = (recovered_depth * np.sqrt(bls_transits[b])) / unc
-                #
-                #         transit_pd["period"].append(recovered_per)
-                #         transit_pd["depth"].append(recovered_depth)
-                #         transit_pd['duration'].append(recovered_dur)
-                #         transit_pd['epoch'].append(mid_transit)
-                #         transit_pd['epoch_start'].append(transit_start)
-                #         transit_pd['epoch_end'].append(transit_end)
-                #         transit_pd['snr'].append(snr)
-                #
-                #         if plot:
-                #             plt.figure(figsize=figsize)
-                #             plt.errorbar(self.time.value, self.flux, self.uncertainty, color='k', fmt='.')
-                #             plt.plot(self.time.value, bls_f_model, 'orange')
-                #             plt.axvline(transit_start.to_value('d'))
-                #             plt.axvline(transit_end.to_value('d'))
-                #             plt.axvline(mid_transit.to_value('d'), linestyle='--')
-                #             plt.plot(self.time.value[transits], self.flux[transits], 'b.')
-                #             plt.title("SNR = %0.2f, Period = %0.2f" % (snr, recovered_per.value))
-                #             plt.xlim(transit_start.to_value('d') - 0.2, transit_start.to_value('d') + 0.2)
-                #             if save_plots:
-                #                 plt.savefig(f"{plot_dir}/{self.name}_bls")
-                #             else:
-                #                 plt.show()
-                #             plt.close()
-
-                        # trans_num = trans_num + 1
         else:
             transit_found=False
             transits = []
@@ -207,7 +167,7 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
         if power_d[max_power] > minpower:
             if return_all_transits:
                 i = 0
-                allpers, allt0s, alldurs, alldepths, allstats, allf_models = [],[],[],[],[],[]
+                allpers, allpow, allt0s, alldurs, alldepths, allstats, allf_models = [],[],[],[],[],[],[]
                 power_ind = sorted_ind_power[0]
                 if plot:
                     plt.figure()
@@ -216,6 +176,7 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
                     if plot:
                         plt.plot(pers[power_ind], power_d[power_ind], 'rx')
                     allpers.append(pers[power_ind])
+                    allpow.append(power_d[power_ind])
                     allt0s.append(epoch_d[power_ind])
                     alldurs.append(durs[power_ind])
                     alldepths.append(depth_d[power_ind])
@@ -227,7 +188,7 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
                     power_ind = sorted_ind_power[i]
                     print(i, power_ind, )
                 return allf_models, \
-                    [[ap, at, ad, ade] for ap, at, ad, ade in zip(allpers, allt0s, alldurs, alldepths)], allstats, BLS_d, pg_d
+                    [[ap, apo, at, ad, ade] for ap, apo, at, ad, ade in zip(allpers, allpow, allt0s, alldurs, alldepths)], allstats, BLS_d, pg_d
             else:
 
                 if plot:
@@ -241,13 +202,14 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
                         plt.show()
 
                 best_per_d = pers[max_power]
+                best_pow_d = power_d[max_power]
                 best_t0_d = epoch_d[max_power]
                 best_dur_d = durs[max_power]
                 best_depth_d = depth_d[max_power]
                 stats = BLS_d.compute_stats(best_per_d, best_dur_d, best_t0_d)
 
                 f_model = BLS_d.model(t_model=self.time.value, period=best_per_d, duration=best_dur_d, transit_time=best_t0_d)
-                return [f_model], [[best_per_d, best_t0_d, best_dur_d, best_depth_d]], [stats], BLS_d, pg_d
+                return [f_model], [[best_per_d, best_pow_d, best_t0_d, best_dur_d, best_depth_d]], [stats], BLS_d, pg_d
 
             if plot:
                 if save_plots and not min_save:

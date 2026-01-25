@@ -174,6 +174,10 @@ def full_injection_recovery(self,
 
             else:
                 print("Planet was not observed, skipping...")
+                planets.to_csv(svname, index=False)
+                clean_lcs.append(None)
+                detrend_lcs.append(None)
+                bls_lcs.append(None)
 
             # except Exception as e:
             #     print(e)
@@ -196,7 +200,7 @@ def full_injection_recovery(self,
 
 def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=None, condition_on_overlap=None,
                                   condition_on_epoch=None, condition_on_period=None, condition_on_snr=None,
-                                  verbose=False, **kw):
+                                  condition_on_blspower=None, verbose=False, **kw):
     """
     Returns a list of booleans whether each transit injected into the light curve was recovered by BLS based on user-
     defined conditions.
@@ -210,6 +214,8 @@ def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=Non
     :param condition_on_period: Fraction from 0-1 of injected period that needs to be recovered (e.g. 0.1 means the
     recovered period must match the injected period to within 10%)
     :param condition_on_snr: SNR threshold for a transit to be recovered successfully.
+    :param condition_on_blspower: BLS power threshold for a transit to be recovered. If objective was 'snr' then this is
+    equivalent to the phase-folded SNR.
     :return:
     """
     recovered_all_planets = []
@@ -307,12 +313,22 @@ def was_injected_planet_recovered(self, min_n_transits=1, condition_on_depth=Non
                         The recovered planet's SNR < {condition_on_snr}.
                         """)
 
+            if condition_on_blspower is not None:
+                if recovered_params['power'][transit] < condition_on_blspower:
+                    recovered = False
+
+                    if verbose:
+                        print(f"""
+                        The recovered planet's BLS power < {condition_on_blspower}.
+                        """)
+
+
             recovered_all_transits.append(recovered)
         recovered_all_planets.append(recovered_all_transits)
 
     return recovered_all_planets
 
-def was_planet_observed(self, fraction_overlap=0.5, planet_i=0):
+def was_planet_observed(self, fraction_overlap=0.5, n_transits=1, planet_i=0):
 
     # set times of the first transit in the observation span
     duration = self.metadata['injected_planet']['duration'][planet_i]
@@ -329,10 +345,10 @@ def was_planet_observed(self, fraction_overlap=0.5, planet_i=0):
             if transit_end >= day[0]:
                 overlap = min(transit_end, day[-1]) - max(transit_start, day[0])
                 if overlap >= (fraction_overlap * duration):
-                    observed = 1
+                    observed += 1
             transit_start = transit_start + period
             transit_end = transit_end + period
-    return bool(observed)
+    return bool(observed >= n_transits)
 
 # def split_lightcurve(self, split_every=0.5*u.d):
 #     t = self.time.value * u.d

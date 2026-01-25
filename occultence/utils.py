@@ -5,7 +5,7 @@ def find_nearest(array, value):
     idx = np.nanargmin(np.abs(array - value))
     return idx
 
-def running_box(x, y, boxsize, operation):
+def running_box_loop(x, y, boxsize, operation):
 
     if operation == "std":
         op = np.nanstd
@@ -42,16 +42,80 @@ def running_box(x, y, boxsize, operation):
     dy = np.ma.masked_invalid(dy)
     return dy
 
+def running_box(x, y, boxsize, operation):
+    # --- 1. Operation Setup ---
+    if operation == "std":
+        op = np.nanstd
+    elif operation == 'median':
+        op = np.nanmedian
+    elif operation == 'mean':
+        op = np.nanmean
+    elif operation == "clipped_std":
+        op = clipped_std  # Assuming this is defined elsewhere in your scope
+    else:
+        print("No running function selected - choose std, median or mean.")
+        return np.nan
+
+    # --- 2. Initialization ---
+    N = len(x)
+    dy = np.zeros((N))
+
+    half_box = boxsize / 2.0
+    step_size = boxsize / 5.
+
+    i = 0
+
+    # --- 3. Loop ---
+    while i < N:
+        current_x = x[i]
+
+        # A. Find the calculation window for the current point
+        # We search specifically for the box edges around the current x[i]
+        s = np.searchsorted(x, current_x - half_box, side='left')
+        e = np.searchsorted(x, current_x + half_box, side='left')
+
+        # B. Compute the value
+        if e - s >= 3:
+            window_data = y[s:e]
+            try:
+                val = op(window_data)
+            except Exception as e:
+                print(e)
+                val = 0
+
+        if e - s < 3 or np.isnan(val):
+            val = 0
+
+        # C. Find the next jump index
+        # We look for the first index where x is significantly further ahead
+        next_i = np.searchsorted(x, current_x + step_size, side='left')
+
+        # D. Broadcast the value
+        # Assign 'val' to all points between the current index and the next jump
+        dy[i: next_i] = val
+
+        # E. Update the loop index
+
+        # force a move to the next index to avoid an infinite loop.
+        if next_i <= i:
+            i += 1
+        else:
+            i = next_i
+
+    dy = np.ma.masked_where(dy == 0, dy)
+    dy = np.ma.masked_invalid(dy)
+    return dy
+
 def clipped_std(x, sigma=3):
     from astropy.stats import sigma_clip
-    return np.ma.std(sigma_clip(x,sigma=sigma))
+    return np.ma.std(sigma_clip(x, sigma=sigma))
 
 def clipped_mean(x, sigma=3):
     from astropy.stats import sigma_clip
-    return np.ma.mean(sigma_clip(x,sigma=sigma))
+    return np.ma.mean(sigma_clip(x, sigma=sigma))
 
 def calculate_running_rms(x,y,boxsize):
-    dy = running_box(x,y,boxsize,'std')
+    dy = running_box(x, y, boxsize, 'std')
     return dy
 
 def calculate_running_clipped_rms(x,y,boxsize):
@@ -59,11 +123,11 @@ def calculate_running_clipped_rms(x,y,boxsize):
     return dy
 
 def calculate_running_median(x,y,boxsize):
-    dy = running_box(x,y,boxsize,'median')
+    dy = running_box(x, y, boxsize, 'median')
     return dy
 
 def calculate_running_mean(x,y,boxsize):
-    dy = running_box(x,y,boxsize,'mean')
+    dy = running_box(x, y, boxsize, 'mean')
     return dy
 
 def sort_on_time(time,*sortarrs):

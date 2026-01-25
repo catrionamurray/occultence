@@ -180,6 +180,9 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
                     if recovery_kw['meet_condition'] == "all":
                         min_n_transits = recovered_n_transits
 
+                if 'min_n_transits' in recovery_kw:
+                    min_n_transits = recovery_kw['min_n_transits']
+
                 n_recovered = 0
                 # loop over all detected transits (in this case most likely 1):
                 for r in range(recovered_n_transits):
@@ -195,6 +198,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
                     planets.loc[i, 'rec_depth'] = bls_targ.metadata['BLS_transits_params']['depth'][0]
                     planets.loc[i, 'rec_duration'] = bls_targ.metadata['BLS_transits_params']['duration'][0].to_value('d')
                     planets.loc[i, 'rec_epoch'] = bls_targ.metadata['BLS_transits_params']['epoch'][0].to_value('d')
+                    planets.loc[i, 'bls_power'] = np.max(bls_targ.metadata['BLS_transits_params']['power'])  # [0]
                     planets.loc[i, 'snr'] = np.max(bls_targ.metadata['BLS_transits_params']['snr'])#[0]
 
                     if verbose:
@@ -463,6 +467,7 @@ def single_bls(i, detrended_targ, bls_kw, recovery_kw, planets, time_this_proces
                     planets.loc[i, 'rec_depth'] = bls_targ.metadata['BLS_transits_params']['depth'][0]
                     planets.loc[i, 'rec_duration'] = bls_targ.metadata['BLS_transits_params']['duration'][0].to_value('d')
                     planets.loc[i, 'rec_epoch'] = bls_targ.metadata['BLS_transits_params']['epoch'][0].to_value('d')
+                    planets.loc[i, 'bls_power'] = np.max(bls_targ.metadata['BLS_transits_params']['power'])
                     planets.loc[i, 'snr'] = np.max(bls_targ.metadata['BLS_transits_params']['snr'])#[0]
 
                     if verbose:
