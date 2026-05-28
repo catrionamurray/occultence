@@ -3,6 +3,7 @@ import time
 from multiprocessing import Pool
 import warnings
 from astropy.utils.exceptions import AstropyWarning
+import pickle as pkl
 
 warnings.filterwarnings("ignore", category=AstropyWarning,
                        message=".*Input data contains invalid values.*")
@@ -49,6 +50,10 @@ def full_injection_recovery(self,
 
     if save_lcs:
         self.save(fname=f"{plot_dir}/{self.name}.pkl")
+
+    if os.path.exists(f"../../Results/{self.name}_BLS.pkl"):
+        print("Deleting BLS file...")
+        os.remove(f"../../Results/{self.name}_BLS.pkl")
 
     if planets is None or lcs_with_transits is None:
         lcs_with_transits, planets = self.inject_lots_of_transits(nfake=nfake,
@@ -138,6 +143,7 @@ def full_injection_recovery(self,
         planets.to_csv(svname, index=False)
 
     else:
+        bls_meta = {}
         for i, lc in enumerate(lcs_with_transits):
             # try:
             print(f"{i + 1}/{len(lcs_with_transits)}...")
@@ -171,6 +177,9 @@ def full_injection_recovery(self,
                 clean_lcs.append(clean_targ)
                 detrend_lcs.append(detrend_targ)
                 bls_lcs.append(bls_targ)
+                bls_meta[i] = bls_targ[0].metadata['BLS_transits_params']
+                bls_meta[i]['frac_inj_dur'] = bls_targ[0].metadata['BLS_transits_params']['dt'] / bls_targ[0].metadata['injected_planet']['duration'][0]
+                bls_meta[i]['injected'] = bls_targ[0].metadata['injected_planet']
 
             else:
                 print("Planet was not observed, skipping...")
@@ -185,6 +194,8 @@ def full_injection_recovery(self,
     if time_this_process:
         t1 = time.time()
         print(f"Time to inject-recover {nfake} planets: {t1 - t0}")
+
+    pkl.dump(bls_meta, open(f"{plot_dir}/{self.name}_BLS.pkl", 'wb'))
 
     # print summary
     print(f"Planets recovered: {100 * len(planets.loc[planets['recovered'] == 1.0]) / len(planets['recovered'])}%")

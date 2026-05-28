@@ -513,24 +513,28 @@ class LightCurve:
         return ax
 
     def plot_split(self, quantity="flux", ax=None, figsize=(36, 4), ylims=[0.98, 1.02], alpha=1.0, color=None,
-                   label="", alpha_error=0.1, **kw):
+                   label="", alpha_error=0.1, sharex=True, **kw):
         i_split, _ = self.split_time(split=self.split_by)
         if ax is None:
-            fig, ax = plt.subplots(ncols=len(i_split)-1, figsize=figsize, sharey=True)
+            fig, ax = plt.subplots(ncols=len(i_split)-1, figsize=figsize, sharey=True, sharex=sharex)
             if len(i_split) == 2:
                 ax = [ax]
 
         for i, (i0, i1) in enumerate(zip(i_split[:-1], i_split[1:])):
+            time = self.time.value[i0:i1]
+            if sharex:
+                time = time - time[0]
+
             if color is not None:
-                ax[i].plot(self.time.value[i0:i1], self.timelike[quantity][i0:i1], '.', color=color, alpha=alpha, label=label, **kw)
-                if quantity=="flux":
-                    ax[i].errorbar(self.time.value[i0:i1], self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
-                                   fmt='.', color=color,alpha=alpha_error, **kw)
+                ax[i].plot(time, self.timelike[quantity][i0:i1], '.', color=color, alpha=alpha, label=label, **kw)
+                if quantity == "flux":
+                    ax[i].errorbar(time, self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
+                                   fmt='.', color=color, alpha=alpha_error, **kw)
             else:
                 c = self.telescope_colors[self.telescope[i0]]
-                ax[i].plot(self.time.value[i0:i1], self.timelike[quantity][i0:i1], '.', color=c, alpha=alpha, label=label, **kw)
-                if quantity=="flux":
-                    ax[i].errorbar(self.time.value[i0:i1], self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
+                ax[i].plot(time, self.timelike[quantity][i0:i1], '.', color=c, alpha=alpha, label=label, **kw)
+                if quantity == "flux":
+                    ax[i].errorbar(time, self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
                                    fmt='.', color=c, alpha=alpha_error, **kw)
 
         ax[0].set_ylim(ylims[0], ylims[1])

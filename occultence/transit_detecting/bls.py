@@ -6,7 +6,9 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                   nperiods=None, plot_dir="", i_lc=0, plot_kw={'ylims': [0.95, 1.05]}, min_save=True):
 
     transit_pd = {"period": [], "power":[], "depth": [], 'duration': [], 'epoch': [], 'epoch_start': [],
-                  'epoch_end': [], 'snr': []}
+                  'epoch_end': [], 'snr': [], 'n': [], 'dt': [], 'frac_rec_dur': []}
+    for k, v in self.timelike.items():
+        transit_pd[f"med_{k}"] = []
 
 
     bls_f_model_all, transit_params_all, stats_all, BLS_obj, periodogram = self.bls(transit_durations=transit_durations,
@@ -85,6 +87,16 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                         transit_pd['epoch_end'].append(transit_end)
                         transit_pd['snr'].append(snr)
                         transit_pd['power'].append(power)
+                        transit_pd['n'].append(bls_transits[b_idx])
+                        transit_pd['dt'].append((bls_transits[b_idx] * self.dt).value)
+                        transit_pd['frac_rec_dur'].append((bls_transits[b_idx] * self.dt).value / duration_val)
+
+                        for k, v in self.timelike.items():
+                            if isinstance(v, Time):
+                                transit_pd[f"med_{k}"].append(Time(np.nanmedian(v[i_start:i_end + 1].jd), format="jd",
+                                                              scale=v.scale))
+                            else:
+                                transit_pd[f"med_{k}"].append(np.nanmedian(v[i_start:i_end + 1]))
 
                         if plot:
                             plt.figure(figsize=figsize)

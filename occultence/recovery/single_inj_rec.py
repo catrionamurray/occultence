@@ -1,5 +1,6 @@
 from ..imports import *
 import time
+import pickle as pkl
 
 def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_kw, flare_kw, detrend_bin, detrend_kw,
                               bls_kw, bls_bin, recovery_kw, detrend_method, time_this_process, plot_dir, save_plots,
@@ -147,6 +148,8 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
 
     bls_targs = removed_nans.find_transits(i_lc=i, **bls_kw)
 
+    bls_meta = {}
+
     if save_lcs:
         # svname = svname + "_bls"
         if not min_save:
@@ -169,6 +172,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
                 if verbose:
                     print("Transit was found - checking if it matches the injected transit!")
 
+                bls_meta[i] = bls_targ.metadata['BLS_transits_params']
                 rec = bls_targ.was_injected_planet_recovered(**recovery_kw)
                 bls_targ.metadata['recovery'] = rec
 
@@ -191,6 +195,8 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
                         n_recovered += 1
                         # recovered = True
 
+                planets.loc[i, 'n_recovered'] = n_recovered
+
                 if n_recovered >= min_n_transits:
                     # total_recovered += 1
                     planets.loc[i, 'recovered'] = 1.0
@@ -211,7 +217,7 @@ def single_injection_recovery(self, lc, planets, i, normalize_each_night, clean_
                 if verbose:
                     print("No transit found!\n")
 
-
+    # pkl.dump(bls_meta, open(f"{plot_dir}/{self.name}_BLS.pkl", 'wb'))
     # bls_lcs.append(bls_targ)
 
     return clean_targ, detrended_targ, bls_targs, planets
