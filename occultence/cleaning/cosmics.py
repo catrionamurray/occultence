@@ -21,5 +21,5 @@ def mask_cosmics(self, boxsize, nsigma, verbose=False):
     if verbose:
         print(f"""
             {100 * np.divide(float(np.count_nonzero(self.masks['cosmics'])),
-            len(self.masks['cosmics']))}% of data is flagged as cosmics ⚡.
+            len(self.masks['cosmics'])):.2f}% of data is flagged as cosmics ⚡.
             """)

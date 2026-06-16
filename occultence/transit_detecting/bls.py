@@ -2,10 +2,16 @@ from ..imports import *
 
 def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_period=30, limitperiod=False,
                   obj='likelihood', oversample=30.0, minpower=5, return_all_transits=False,
-                  plot=False, figsize=(12, 4), verbose=False):
+                  minimum_n_transit=3, plot=False, figsize=(12, 4), verbose=False, save_plots=False,
+                  nperiods=None, plot_dir="", i_lc=0, plot_kw={'ylims': [0.95, 1.05]}, min_save=True):
 
-    transit_pd = {"period": [], "depth": [], 'duration': [], 'epoch':[], 'epoch_start':[], 'epoch_end':[], 'snr': []}
-    bls_f_model_all, transit_params_all, stats_all, BLS_obj = self.bls(transit_durations=transit_durations,
+    transit_pd = {"period": [], "power":[], "depth": [], 'duration': [], 'epoch': [], 'epoch_start': [],
+                  'epoch_end': [], 'snr': [], 'n': [], 'dt': [], 'frac_rec_dur': []}
+    for k, v in self.timelike.items():
+        transit_pd[f"med_{k}"] = []
+
+
+    bls_f_model_all, transit_params_all, stats_all, BLS_obj, periodogram = self.bls(transit_durations=transit_durations,
                                                            minimum_period= minimum_period,
                                                            maximum_period=maximum_period,
                                                            limitperiod=limitperiod,
@@ -13,50 +19,105 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
                                                            oversample=oversample,
                                                            minpower=minpower,
                                                            return_all_transits=return_all_transits,
-                                                           verbose=verbose)
+                                                           minimum_n_transit=minimum_n_transit,
+                                                           nperiods=nperiods,
+                                                           verbose=verbose,
+                                                           plot=plot,
+                                                           min_save=min_save,)
+
+    # Pre-compute time array with units once
+    time_with_units = self.time.value * u.d
 
     bls_lightcurve_all = []
     for i, (bls_f_model, transit_params, stats) in enumerate(zip(bls_f_model_all, transit_params_all, stats_all)):
         bls_lightcurve = self._create_copy()
+
         if len(stats) > 0:
             bls_transits = stats['per_transit_count']
-            transits = np.where(np.array(bls_f_model) < np.nanmedian(bls_f_model))[0]
+            # transits = np.where(np.array(bls_f_model) < np.nanmedian(bls_f_model))[0]
+            transits = np.where(bls_f_model < np.nanmedian(bls_f_model))[0]
 
-            trans_num = 0
+            # trans_num = 0
             transit_found = True
             if len(bls_transits) > 0:
-                for b in range(len(bls_transits)):
-                    if bls_transits[b] > 0:
-                        mid_transit = stats['transit_times'][b] * u.d #.value
-                        transit_start = mid_transit - (0.5 * transit_params[2] * u.d)#.to_value('d'))
-                        transit_end = mid_transit + (0.5 * transit_params[2] * u.d)#.to_value('d'))
+                # Pre-extract transit parameters (avoid repeated indexing)
+                period_val = transit_params[0] * u.d
+                duration_val = transit_params[3] * u.d
+                power = transit_params[1]
+                half_duration = 0.5 * duration_val
 
-                        recovered_per = transit_params[0] * u.d #np.log10(transit_params[0].to_value('d'))
-                        recovered_dur = (transit_end - transit_start)
-                        recovered_depth = stats['depth'][0]
-                        snr = (recovered_depth * np.sqrt(bls_transits[b])) / np.nanmedian(self.uncertainty)
+                # Vectorize transit processing
+                transit_times = stats['transit_times'] * u.d
+                valid_transits = bls_transits > 0
 
-                        transit_pd["period"].append(recovered_per)
+                if np.any(valid_transits):
+                    # Process all valid transits at once
+                    valid_indices = np.where(valid_transits)[0]
+                    mid_transits = transit_times[valid_indices]
+                    transit_starts = mid_transits - half_duration
+                    transit_ends = mid_transits + half_duration
+
+                    recovered_depth = stats['depth'][0]
+
+                    # Vectorized search for start/end indices using searchsorted (much faster than where)
+                    i_starts = np.searchsorted(time_with_units.value, transit_starts.value)
+                    i_ends = np.searchsorted(time_with_units.value, transit_ends.value, side='right') - 1
+
+                    # Ensure indices are valid
+                    i_starts = np.clip(i_starts, 0, len(self.uncertainty) - 1)
+                    i_ends = np.clip(i_ends, 0, len(self.uncertainty) - 1)
+
+                    # Compute SNR for all transits
+                    for j, (b_idx, mid_transit, transit_start, transit_end, i_start, i_end) in enumerate(
+                            zip(valid_indices, mid_transits, transit_starts, transit_ends, i_starts, i_ends)
+                    ):
+                        if i_end > i_start:  # Ensure valid range
+                            unc = np.nanmedian(self.uncertainty[i_start:i_end + 1])
+                            snr = (recovered_depth * np.sqrt(bls_transits[b_idx])) / unc
+                        else:
+                            unc = np.nanmedian(self.uncertainty)
+                            snr = (recovered_depth * np.sqrt(bls_transits[b_idx])) / unc
+
+                        # Append results
+                        transit_pd["period"].append(period_val)
                         transit_pd["depth"].append(recovered_depth)
-                        transit_pd['duration'].append(recovered_dur)
+                        transit_pd['duration'].append(transit_end - transit_start)
                         transit_pd['epoch'].append(mid_transit)
                         transit_pd['epoch_start'].append(transit_start)
                         transit_pd['epoch_end'].append(transit_end)
                         transit_pd['snr'].append(snr)
+                        transit_pd['power'].append(power)
+                        transit_pd['n'].append(bls_transits[b_idx])
+                        transit_pd['dt'].append((bls_transits[b_idx] * self.dt).value)
+                        transit_pd['frac_rec_dur'].append((bls_transits[b_idx] * self.dt).value / duration_val)
+
+                        for k, v in self.timelike.items():
+                            if isinstance(v, Time):
+                                transit_pd[f"med_{k}"].append(Time(np.nanmedian(v[i_start:i_end + 1].jd), format="jd",
+                                                              scale=v.scale))
+                            else:
+                                transit_pd[f"med_{k}"].append(np.nanmedian(v[i_start:i_end + 1]))
 
                         if plot:
                             plt.figure(figsize=figsize)
                             plt.errorbar(self.time.value, self.flux, self.uncertainty, color='k', fmt='.')
                             plt.plot(self.time.value, bls_f_model, 'orange')
-                            plt.axvline(transit_start.to_value('d'))
-                            plt.axvline(transit_end.to_value('d'))
+                            plt.axvline(transit_start.value)
+                            plt.axvline(transit_end.value)
+                            plt.axvline(mid_transit.value, linestyle='--')
                             plt.plot(self.time.value[transits], self.flux[transits], 'b.')
-                            plt.title("SNR = %0.2f, Period = %0.2f" % (snr, recovered_per.value))
-                            plt.xlim(transit_start.to_value('d') - 0.2, transit_start.to_value('d') + 0.2)
-                            plt.show()
-                            plt.close()
+                            plt.title(f"SNR = {snr:.2f}, Period = {period_val.value:.2f}")
+                            plt.xlim(transit_start.value - 0.2, transit_start.value + 0.2)
+                            if save_plots:
+                                plt.savefig(f"{plot_dir}/{self.name}_bls{j}")
+                                plt.close()
+                            else:
+                                plt.show()
+                                plt.close()
+                else:
+                    transit_found = False
+                    transits = []
 
-                        trans_num = trans_num + 1
         else:
             transit_found=False
             transits = []
@@ -75,19 +136,31 @@ def find_transits(self, transit_durations=0.01, minimum_period=0.5, maximum_peri
 
 
 def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, obj, oversample, minpower,
-        return_all_transits, verbose):
+        return_all_transits, minimum_n_transit, verbose, nperiods=None, plot=False, figsize=(12, 4),
+        save_plots=False, plot_dir="", i_lc=0, plot_kw={'ylims': [0.95, 1.05]}, min_save=True):
 
     if verbose:
         print("Running BLS Search")
 
-    if limitperiod:
-        maximum_period = min(30, max(self.time) - min(self.time))
-
-    periods = np.linspace(minimum_period, maximum_period, num=10000)
+    # if limitperiod:
+    #     maximum_period = min(30, max(self.time) - min(self.time))
+    #
+    # periods = np.linspace(minimum_period, maximum_period, num=10000)
 
     nan_mask = ~np.isnan(self.flux)
     BLS_d = BoxLeastSquares(self.time.value[nan_mask], self.flux[nan_mask], dy=self.uncertainty[nan_mask])
-    pg_d = BLS_d.power(periods, transit_durations, objective=obj, oversample=oversample)
+
+    if nperiods is not None:
+        periods = np.logspace(
+            np.log10(minimum_period),
+            np.log10(maximum_period),
+            nperiods
+        )
+        pg_d = BLS_d.power(periods, transit_durations, objective=obj, oversample=oversample)
+    else:
+        pg_d = BLS_d.autopower(transit_durations, objective=obj, oversample=oversample, minimum_period=minimum_period,
+                               maximum_period=maximum_period, minimum_n_transit=minimum_n_transit)
+
     pers, power_d, epoch_d, depth_d, durs = pg_d.period, pg_d.power, pg_d.transit_time, pg_d.depth, pg_d.duration
 
     max_power = np.argmax(power_d)
@@ -102,18 +175,20 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
 
     sorted_ind_power = np.argsort(power_d)[::-1]
 
-
     if np.count_nonzero(np.isfinite(power_d)) > 0:
         if power_d[max_power] > minpower:
             if return_all_transits:
                 i = 0
-                allpers, allt0s, alldurs, alldepths, allstats, allf_models = [],[],[],[],[],[]
+                allpers, allpow, allt0s, alldurs, alldepths, allstats, allf_models = [],[],[],[],[],[],[]
                 power_ind = sorted_ind_power[0]
-                plt.figure()
-                plt.plot(pers, power_d)
+                if plot:
+                    plt.figure()
+                    plt.plot(pers, power_d)
                 while power_d[power_ind] > minpower:
-                    plt.plot(pers[power_ind], power_d[power_ind], 'rx')
+                    if plot:
+                        plt.plot(pers[power_ind], power_d[power_ind], 'rx')
                     allpers.append(pers[power_ind])
+                    allpow.append(power_d[power_ind])
                     allt0s.append(epoch_d[power_ind])
                     alldurs.append(durs[power_ind])
                     alldepths.append(depth_d[power_ind])
@@ -125,25 +200,47 @@ def bls(self, transit_durations, minimum_period, maximum_period, limitperiod, ob
                     power_ind = sorted_ind_power[i]
                     print(i, power_ind, )
                 return allf_models, \
-                    [[ap, at, ad, ade] for ap, at, ad, ade in zip(allpers, allt0s, alldurs, alldepths)], allstats, BLS_d
+                    [[ap, apo, at, ad, ade] for ap, apo, at, ad, ade in zip(allpers, allpow, allt0s, alldurs, alldepths)], allstats, BLS_d, pg_d
             else:
+
+                if plot:
+                    power_ind = sorted_ind_power[0]
+                    plt.figure()
+                    plt.plot(pers, power_d)
+                    plt.plot(pers[power_ind], power_d[power_ind], 'rx')
+                    if save_plots and not min_save:
+                        plt.savefig(f"{plot_dir}/{self.name}_bls_periodogram")
+                    else:
+                        plt.show()
+
                 best_per_d = pers[max_power]
+                best_pow_d = power_d[max_power]
                 best_t0_d = epoch_d[max_power]
                 best_dur_d = durs[max_power]
                 best_depth_d = depth_d[max_power]
                 stats = BLS_d.compute_stats(best_per_d, best_dur_d, best_t0_d)
 
                 f_model = BLS_d.model(t_model=self.time.value, period=best_per_d, duration=best_dur_d, transit_time=best_t0_d)
-                return [f_model], [[best_per_d, best_t0_d, best_dur_d, best_depth_d]], [stats], BLS_d
+                return [f_model], [[best_per_d, best_pow_d, best_t0_d, best_dur_d, best_depth_d]], [stats], BLS_d, pg_d
+
+            if plot:
+                if save_plots and not min_save:
+                    plt.savefig(f"{plot_dir}/{self.name}_bls_periodogram")
+                    plt.close()
+                else:
+                    plt.show()
+                    plt.close()
         else:
             if verbose:
                 print("No transits detected!")
-            return np.ones(len(self.time)), [], [], []
+            return np.ones(len(self.time)), [], [], [], pg_d
 
     else:
         if verbose:
             print("No transits detected!")
-        return np.ones(len(self.time)), [], [], []
+        return np.ones(len(self.time)), [], [], [], pg_d
+
+
 
 
 

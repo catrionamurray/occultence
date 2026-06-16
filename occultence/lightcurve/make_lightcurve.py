@@ -512,25 +512,29 @@ class LightCurve:
         ax.legend()
         return ax
 
-    def plot_split(self, quantity="flux", ax=None, figsize=(36, 4), ylims=[0.98,1.02], alpha=1.0, color=None,
-                   label="", alpha_error=0.1, **kw):
+    def plot_split(self, quantity="flux", ax=None, figsize=(36, 4), ylims=[0.98, 1.02], alpha=1.0, color=None,
+                   label="", alpha_error=0.1, sharex=True, **kw):
         i_split, _ = self.split_time(split=self.split_by)
         if ax is None:
-            fig, ax = plt.subplots(ncols=len(i_split)-1, figsize=figsize, sharey=True)
+            fig, ax = plt.subplots(ncols=len(i_split)-1, figsize=figsize, sharey=True, sharex=sharex)
             if len(i_split) == 2:
                 ax = [ax]
 
         for i, (i0, i1) in enumerate(zip(i_split[:-1], i_split[1:])):
+            time = self.time.value[i0:i1]
+            if sharex:
+                time = time - time[0]
+
             if color is not None:
-                ax[i].plot(self.time.value[i0:i1], self.timelike[quantity][i0:i1], '.', color=color, alpha=alpha, label=label, **kw)
-                if quantity=="flux":
-                    ax[i].errorbar(self.time.value[i0:i1], self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
-                                   fmt='.', color=color,alpha=alpha_error, **kw)
+                ax[i].plot(time, self.timelike[quantity][i0:i1], '.', color=color, alpha=alpha, label=label, **kw)
+                if quantity == "flux":
+                    ax[i].errorbar(time, self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
+                                   fmt='.', color=color, alpha=alpha_error, **kw)
             else:
                 c = self.telescope_colors[self.telescope[i0]]
-                ax[i].plot(self.time.value[i0:i1], self.timelike[quantity][i0:i1], '.', color=c, alpha=alpha, label=label, **kw)
-                if quantity=="flux":
-                    ax[i].errorbar(self.time.value[i0:i1], self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
+                ax[i].plot(time, self.timelike[quantity][i0:i1], '.', color=c, alpha=alpha, label=label, **kw)
+                if quantity == "flux":
+                    ax[i].errorbar(time, self.timelike[quantity][i0:i1], self.uncertainty[i0:i1],
                                    fmt='.', color=c, alpha=alpha_error, **kw)
 
         ax[0].set_ylim(ylims[0], ylims[1])
@@ -565,6 +569,35 @@ class LightCurve:
         new_lc.timelike['phase'] = ph_d
         return new_lc
 
+    def normalize(self, **kw):
+        new_lc = self._create_copy()
+        new_lc.timelike['flux'] = self.timelike['flux'] / np.nanmedian(self.timelike['flux'])
+
+        new_lc.metadata['normalization'] = {'norm_og_median': np.nanmedian(self.timelike['flux'])}
+        new_lc._set_name(new_lc.name + "_normalized")
+
+        return new_lc
+    def normalize_each_night(self, **kw):
+        """
+        Perform normalization for each night in the light curve timeseries.
+        :param self: LightCurve object
+        :param kw: keywords to pass to self.gp_detrend
+        :return: normalized LightCurve object
+        """
+        norm_days = []
+        for i in range(self.ndays):
+            norm_days.append(self.split_day(i).normalize(**kw))
+
+        reconst = norm_days[0]
+        for md in norm_days[1:]:
+            reconst = reconst.concatenate(md)
+
+        return reconst
+
+    def save(self, fname):
+        import pickle as pkl
+        print(f"Saved LC as: {fname}")
+        pkl.dump(self, file=open(fname, 'wb'))
 
 
     # from .remove_transit import (
@@ -588,6 +621,7 @@ class LightCurve:
     from ..binning import (
         bin,
         split_time,
+        split_time_indices_only,
         extract,
     )
     from ..lightcurve_detrending import (

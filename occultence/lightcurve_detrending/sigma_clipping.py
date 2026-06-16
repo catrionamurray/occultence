@@ -11,7 +11,8 @@ def first_sigma_clip(y, nsigma_upper, nsigma_lower, **kw):
     """
     return sigma_clip(y, sigma_upper=nsigma_upper, sigma_lower=nsigma_lower, **kw).filled(np.nan)
 
-def second_sigma_clip(x,y, dy, nsigma_upper, nsigma_lower, running_mean_boxsize, use_uncertainties=False, plot=False):
+def second_sigma_clip(x,y, dy, nsigma_upper, nsigma_lower, running_median_boxsize, use_uncertainties=False,
+                      plot=False, operation="median"):
     """
     Perform running sigma clip.
     :param x: time data.
@@ -26,11 +27,11 @@ def second_sigma_clip(x,y, dy, nsigma_upper, nsigma_lower, running_mean_boxsize,
 
     # iteratively sigma clip until data is no longer clipped
     while it == True:
-        run_med = running_box(x, y, running_mean_boxsize, 'median')
+        run_med = running_box(x, y, running_median_boxsize, operation=operation)
         if use_uncertainties:
             avg_std = dy
         else:
-            run_std = running_box(x, y, running_mean_boxsize, 'std')
+            run_std = running_box(x, y, running_median_boxsize, operation='std')
             avg_std = np.nanmedian(run_std)
         cond = np.logical_or(y > run_med + (nsigma_upper * avg_std),
                               y < run_med - (nsigma_lower * avg_std))
@@ -43,7 +44,7 @@ def second_sigma_clip(x,y, dy, nsigma_upper, nsigma_lower, running_mean_boxsize,
     return y
 
 def global_and_local_sigma_clip(self, global_sc_kw={'nsigma_upper':3, 'nsigma_lower':3},
-                                local_sc_kw={'nsigma_upper': 5, 'nsigma_lower': 5, 'running_mean_boxsize': 0.4}):
+                                local_sc_kw={'nsigma_upper': 5, 'nsigma_lower': 5, 'running_median_boxsize': 0.4}):
 
     clipped_lc = self._create_copy()
 

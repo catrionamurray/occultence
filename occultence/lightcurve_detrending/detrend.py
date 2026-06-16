@@ -2,9 +2,10 @@ from ..imports import *
 from .gp import *
 from .sigma_clipping import first_sigma_clip, second_sigma_clip
 
-def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma=3, running_mean_boxsize=0.04,
+def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma=3, running_median_boxsize=0.04,
                use_uncertainties=True, rotation_period=None, rotation_amp=None, plot=True, figsize=(12, 4),
-               verbose=False, **kw):
+               verbose=False, plot_dir="", save_plots=False, min_save=True, plotkw={'ylims': [0.95, 1.05]}, i_lc=0,
+               **kw):
 
     detrended_lightcurve = self._create_copy()
 
@@ -32,7 +33,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
             plt.plot(x, y, '.', alpha=0.5, label="Before Second Sigma-Clip")
 
         y = second_sigma_clip(x=x, y=y, dy=yerr, nsigma_lower=nsigma_lower, nsigma_upper=nsigma_upper,
-                              running_mean_boxsize=running_mean_boxsize, use_uncertainties=use_uncertainties)
+                              running_median_boxsize=running_median_boxsize, use_uncertainties=use_uncertainties)
         if plot:
             plt.plot(x, y, '.', alpha=0.5, label="After Second Sigma-Clip")
 
@@ -50,6 +51,7 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
                                                                            rotation_period=rotation_period,
                                                                            rotation_amp=rotation_amp,
                                                                            plot=plot, figsize=figsize, verbose=verbose,
+                                                                           svname=self.name,
                                                                            **kw)
 
     detrended_lightcurve.timelike['gp_model'] = (gp_mu_og + 1)
@@ -64,6 +66,29 @@ def gp_detrend(self, do_first_sigma_clip=True, do_second_sigma_clip=True, nsigma
         plt.title("GP-detrended data")
         plt.ylabel("Flux")
         plt.xlabel("Time [d]")
+        if save_plots and not min_save:
+            plt.savefig(f"{plot_dir}/{self.name}_gp_detrended")
+        else:
+            plt.show()
+        plt.close()
+
+        if self.ndays > 1:
+            ax = self.plot()
+            x_pred = np.linspace(np.min(self.time.value), np.max(self.time.value), 1000)
+            pred_mu, pred_var = gp_func.predict(y[cond_nans] - 1, x_pred, return_var=True)
+            y_pred = pred_mu + 1
+            yerr_pred = np.sqrt(pred_var)
+
+            for i, ax_i in enumerate(ax):
+                plt.sca(ax_i)
+                plt.fill_between(x_pred, y_pred - yerr_pred, y_pred + yerr_pred,
+                                 color="orange", alpha=0.5, zorder=2)
+                plt.plot(x_pred, y_pred, "orange", lw=1.5, alpha=0.8, zorder=2)
+                plt.xlim(self.split_day(i).time[0].value, self.split_day(i).time[-1].value)
+            if save_plots and not min_save:
+                plt.savefig(f"{plot_dir}/{self.name}_gp_detrended2")
+            else:
+                plt.show()
 
     # store some metadata about the kernel too:
     detrended_lightcurve.metadata['gp'] = gp_func

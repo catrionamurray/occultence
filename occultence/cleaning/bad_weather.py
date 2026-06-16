@@ -18,5 +18,5 @@ def mask_bad_weather(self, boxsize, thresh, verbose, plot=False):
     if verbose:
         print(f"""
             {100 * np.divide(float(np.count_nonzero(self.masks['bad_weather'])),
-            len(self.masks['bad_weather']))}% of data is flagged as bad weather ⛅.
+            len(self.masks['bad_weather'])):.2f}% of data is flagged as bad weather ⛅.
             """)

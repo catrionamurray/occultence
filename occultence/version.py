@@ -1,4 +1,4 @@
-__version__ = "0.5.3"
+__version__ = "0.5.19"
 
 
 def version():
@@ -14,3 +14,13 @@ def version():
 # v0.5.1 - fixed bug in ...
 # v0.5.2 - fixed bug in bad weather removal
 # v0.5.3 - fixed bugs in flare detection and dust removal, small fixes
+# v0.5.5 - add nightly normalization
+# v0.5.7 - updated recovery criteria
+# v0.5.8 - sped up binning
+# v0.5.9 - skip running the full IR if the planet is not observed
+# v0.5.10 - slightly speed up BLS
+# v0.5.11 - add the ability to save plots
+# v0.5.12 - add the ability to save LCs
+# v0.5.13 - change BLS from .autopower to .power
+# v0.5.14 - added "min_save" kw
+# v0.5.16 - return BLS periodogram, save BLS SNR

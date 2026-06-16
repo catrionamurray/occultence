@@ -19,7 +19,7 @@ def lombscargle_detrend(self, ls_binning=30*u.minute, plot=False, verbose=True, 
 
         detrended_lightcurve.metadata['ls_period'] = periods[0]
         detrended_lightcurve.metadata['ls_power'] = power[0]
-        detrended_lightcurve.metadata['fap'] = fap
+        detrended_lightcurve.metadata['fal'] = fap
         detrended_lightcurve.metadata['recovered_period'] = False
     else:
         if verbose:
@@ -28,7 +28,7 @@ def lombscargle_detrend(self, ls_binning=30*u.minute, plot=False, verbose=True, 
         detrended_lightcurve.metadata['ls_period'] = periods[0]
         detrended_lightcurve.metadata['ls_power'] = power[0]
         detrended_lightcurve.metadata['ls'] = ls
-        detrended_lightcurve.metadata['fap'] = fap
+        detrended_lightcurve.metadata['fal'] = fap
         detrended_lightcurve.metadata['recovered_period'] = True
         detrended_lightcurve.timelike['ls_model'] = model
         detrended_lightcurve.timelike['original_flux'] = detrended_lightcurve.timelike['flux'] * 1
